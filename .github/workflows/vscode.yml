@@ -1,0 +1,80 @@
+# Package the VS Code extension as platform-specific .vsix files and attach them to the GitHub
+# Release. cargo-dist (release.yml) builds the native binaries but does NOT make vsix files, so this
+# runs afterwards: it downloads each platform's binary from the just-published Release, drops it into
+# the extension's bin/<os>-<arch>/ folder (where config.ts#resolveBinary looks), and runs vsce.
+#
+# This is intentionally a separate workflow from release.yml, which `dist init` owns and regenerates.
+name: VS Code extension
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build vsix files for (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  vsix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # code_target == bin/<os>-<arch> dir the extension expects (config.ts#bundledBinaryRelPath)
+          - { code_target: linux-x64,    rust: x86_64-unknown-linux-gnu,  archive: tar.xz, bin: indexify }
+          - { code_target: linux-arm64,  rust: aarch64-unknown-linux-gnu, archive: tar.xz, bin: indexify }
+          - { code_target: darwin-x64,   rust: x86_64-apple-darwin,       archive: tar.xz, bin: indexify }
+          - { code_target: darwin-arm64, rust: aarch64-apple-darwin,      archive: tar.xz, bin: indexify }
+          - { code_target: win32-x64,    rust: x86_64-pc-windows-msvc,    archive: zip,    bin: indexify.exe }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${{ github.event.release.tag_name || inputs.tag }}" >> "$GITHUB_OUTPUT"
+
+      - name: Download the native binary from the Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          ASSET="indexify-${{ matrix.rust }}.${{ matrix.archive }}"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ASSET"
+          DEST="vscode/bin/${{ matrix.code_target }}"
+          mkdir -p "$DEST"
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            unzip -j "$ASSET" "*/${{ matrix.bin }}" -d "$DEST"
+          else
+            tar -xf "$ASSET" --strip-components=1 -C "$DEST" --wildcards "*/${{ matrix.bin }}"
+          fi
+          chmod +x "$DEST/${{ matrix.bin }}" || true
+          ls -l "$DEST"
+
+      - name: Package vsix
+        working-directory: vscode
+        run: |
+          set -euo pipefail
+          cp ../README.md ../LICENSE .          # vsce reads these from the package dir
+          npm ci
+          npm run build
+          npx --yes @vscode/vsce package \
+            --target "${{ matrix.code_target }}" \
+            -o "indexify-${{ matrix.code_target }}-${{ steps.tag.outputs.tag }}.vsix"
+
+      - name: Attach vsix to the Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ steps.tag.outputs.tag }}" \
+            "vscode/indexify-${{ matrix.code_target }}-${{ steps.tag.outputs.tag }}.vsix" \
+            --repo "$GITHUB_REPOSITORY" --clobber

@@ -1,0 +1,19 @@
+# Rust build artifacts (workspace target at the repo root)
+target/
+
+# Node / VS Code extension build
+node_modules/
+out/
+*.vsix
+.vscode-test/
+
+# Native binaries are build output, not source: produced by `cargo build` / cargo-dist Releases and
+# staged into the extension by CI before `vsce package`. Never committed (matches bin/ at any level).
+bin/
+
+# Index data (if an index is ever built inside this repo)
+.indexify/
+
+# OS / editor cruft
+.DS_Store
+*~

@@ -1,0 +1,14 @@
+# Excluded from the .vsix. The runtime ships out/extension.js + a bin/<os>-<arch>/indexify binary
+# (copied next to the extension at package time; see ../README.md and the package script).
+node_modules/**
+src/**
+**/*.ts
+**/*.map
+tsconfig.json
+esbuild.js
+.vscode/**
+.gitignore
+.vscode-test/**
+images/*.svg
+**/.eslintrc*
+*.vsix

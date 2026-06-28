@@ -1,0 +1,16 @@
+# Virtual workspace root. The Rust crate lives in core/; keeping the workspace manifest at the repo
+# root (alongside vscode/ and bin/) gives cargo-dist a single, conventional place for its config
+# ([workspace.metadata.dist]) and lets `dist init` put the release workflow at .github/.
+[workspace]
+members = ["core"]
+resolver = "2"
+
+# Profiles must live at the workspace root (a member's [profile] is ignored).
+[profile.release]
+opt-level = 3
+lto = "thin"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
