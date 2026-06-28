@@ -66,6 +66,8 @@ jobs:
           DEST="vscode/bin/${{ matrix.code_target }}"
           mkdir -p "$DEST"
           if [ "${{ matrix.archive }}" = "zip" ]; then
+            # Try root-level first (cargo-dist >=0.20 flat layout), then subdir layout
+            unzip -j "$ASSET" "${{ matrix.bin }}" -d "$DEST" 2>/dev/null || \
             unzip -j "$ASSET" "*/${{ matrix.bin }}" -d "$DEST"
           else
             tar -xf "$ASSET" --strip-components=1 -C "$DEST" --wildcards "*/${{ matrix.bin }}"
