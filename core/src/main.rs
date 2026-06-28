@@ -76,6 +76,9 @@ enum Command {
         /// Skip the automatic incremental sync before searching (faster, may return stale results).
         #[arg(long)]
         no_sync: bool,
+        /// Case-sensitive search (default: case-insensitive).
+        #[arg(long)]
+        case_sensitive: bool,
     },
     /// Show index statistics.
     Status {
@@ -102,8 +105,8 @@ fn main() -> Result<()> {
         Command::Init { index_dir, roots, force } => cmd::init::run(index_dir.as_deref(), &roots, force),
         Command::Build { index_dir, force } => cmd::build::run(index_dir.as_deref(), force),
         Command::Sync { index_dir } => cmd::sync::run(index_dir.as_deref()),
-        Command::Search { query, index_dir, regex, max, json, no_sync } => {
-            cmd::search::run(index_dir.as_deref(), &query, regex, max, json, no_sync)
+        Command::Search { query, index_dir, regex, max, json, no_sync, case_sensitive } => {
+            cmd::search::run(index_dir.as_deref(), &query, regex, max, json, no_sync, case_sensitive)
         }
         Command::Status { index_dir, json } => cmd::status::run(index_dir.as_deref(), json),
         Command::Serve { index_dir } => cmd::serve::run(index_dir.as_deref()),

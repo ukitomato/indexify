@@ -207,7 +207,7 @@ impl McpServer {
             Ok(s) => s,
             Err(e) => return text_result(format!("error opening index: {e}"), true),
         };
-        match searcher::search(&state, query, regex, max) {
+        match searcher::search(&state, query, regex, max, false) {
             Ok(hits) => text_result(self.format_hits(&hits), false),
             Err(e) => text_result(format!("search error: {e}"), true),
         }

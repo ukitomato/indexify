@@ -68,11 +68,11 @@ fn line_starts(bytes: &[u8]) -> Vec<usize> {
 }
 
 enum Verifier {
-    Substr(memchr::memmem::Finder<'static>),
+    Substr { finder: memchr::memmem::Finder<'static>, case_sensitive: bool },
     Regex(regex::Regex),
 }
 
-pub fn search(state: &State, query: &str, regex_mode: bool, max: usize) -> Result<Vec<Hit>> {
+pub fn search(state: &State, query: &str, regex_mode: bool, max: usize, case_sensitive: bool) -> Result<Vec<Hit>> {
     let searcher = state.reader.searcher();
 
     // Build the trigram candidate set + the line verifier.
@@ -81,7 +81,11 @@ pub fn search(state: &State, query: &str, regex_mode: bool, max: usize) -> Resul
         if runs.is_empty() {
             return Err(anyhow!("regex needs a literal substring of >=3 chars to use the index"));
         }
-        let re = regex::Regex::new(&format!("(?i){}", query))?;
+        let re = if case_sensitive {
+            regex::Regex::new(query)?
+        } else {
+            regex::Regex::new(&format!("(?i){query}"))?
+        };
         (trigrams_of(runs.iter().map(|s| s.as_str())), Verifier::Regex(re))
     } else {
         let needle = query.to_ascii_lowercase();
@@ -89,8 +93,11 @@ pub fn search(state: &State, query: &str, regex_mode: bool, max: usize) -> Resul
             return Ok(Vec::new());
         }
         let tris = trigrams_of(std::iter::once(needle.as_str()));
-        let finder = memchr::memmem::Finder::new(needle.as_bytes()).into_owned();
-        (tris, Verifier::Substr(finder))
+        // For case-sensitive verify, the finder contains original-case bytes; for
+        // case-insensitive it contains the lowercased needle (matching the lowercased haystack).
+        let finder_needle: &[u8] = if case_sensitive { query.as_bytes() } else { needle.as_bytes() };
+        let finder = memchr::memmem::Finder::new(finder_needle).into_owned();
+        (tris, Verifier::Substr { finder, case_sensitive })
     };
 
     let mut subs: Vec<(Occur, Box<dyn Query>)> = Vec::new();
@@ -120,12 +127,18 @@ pub fn search(state: &State, query: &str, regex_mode: bool, max: usize) -> Resul
             if let Ok(bytes) = std::fs::read(path) {
                 let (text, _, _) = enc.decode(&bytes);
                 match &verifier {
-                    Verifier::Substr(finder) => {
+                    Verifier::Substr { finder, case_sensitive } => {
                         let orig = text.as_bytes();
-                        let lc = text.to_ascii_lowercase();
+                        let haystack_buf;
+                        let haystack: &[u8] = if *case_sensitive {
+                            orig
+                        } else {
+                            haystack_buf = text.to_ascii_lowercase().into_bytes();
+                            &haystack_buf
+                        };
                         let starts = line_starts(orig);
                         let mut last = usize::MAX;
-                        for off in finder.find_iter(lc.as_bytes()) {
+                        for off in finder.find_iter(haystack) {
                             let li = match starts.binary_search(&off) {
                                 Ok(i) => i,
                                 Err(i) => i - 1,

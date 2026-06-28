@@ -7,8 +7,13 @@
 name: VS Code extension
 
 on:
-  release:
-    types: [published]
+  # `release: published` cannot be used here: cargo-dist creates the Release with GITHUB_TOKEN,
+  # and GitHub Actions does not cascade workflow triggers for GITHUB_TOKEN-created events.
+  # `workflow_run` fires after the upstream workflow itself, regardless of how that workflow was
+  # started, so it correctly catches releases created by cargo-dist.
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
@@ -20,6 +25,8 @@ permissions:
 
 jobs:
   vsix:
+    # For workflow_run: only proceed when the upstream Release workflow succeeded.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -40,7 +47,13 @@ jobs:
 
       - name: Resolve tag
         id: tag
-        run: echo "tag=${{ github.event.release.tag_name || inputs.tag }}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            # workflow_run: head_branch is the git tag that triggered the Release workflow (e.g. v0.1.0)
+            echo "tag=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download the native binary from the Release
         env:

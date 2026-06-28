@@ -131,7 +131,8 @@ fn handle_cmd(state: &Arc<State>, dir: &Path, req: &serde_json::Value) -> Result
             let q = req.get("query").and_then(|v| v.as_str()).unwrap_or("");
             let regex = req.get("regex").and_then(|v| v.as_bool()).unwrap_or(false);
             let max = req.get("max").and_then(|v| v.as_u64()).unwrap_or(300) as usize;
-            let hits = searcher::search(state, q, regex, max)?;
+            let case_sensitive = req.get("caseSensitive").and_then(|v| v.as_bool()).unwrap_or(false);
+            let hits = searcher::search(state, q, regex, max, case_sensitive)?;
             let n = hits.len();
             for h in hits {
                 emit(serde_json::json!({ "id": id, "type": "match", "file": h.file, "line": h.line, "text": h.text }));

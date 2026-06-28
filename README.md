@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔍 indexify
+# indexify
 
 **Fast indexed full-text code search — one trigram index, three front-ends: CLI, MCP server, and VS Code.**
 
@@ -32,6 +32,7 @@ legacy Shift_JIS assets.
 - 🔁 **Incremental** — search auto-syncs changed files first; the daemon/extension also watch the tree and
   reindex only what changed, so the index stays fresh without re-scanning everything.
 - 🔎 **Substring and regex** — trigram candidates → exact verify (Zoekt/codesearch style).
+- 🔡 **Case-sensitive or case-insensitive** — your choice per query.
 - 🧩 **One index, three front-ends** — the **CLI**, an **MCP server** (for AI agents), and the **VS Code**
   extension all read the same index and the same `settings.json`, so they can never disagree about what's
   indexed.
@@ -80,8 +81,10 @@ indexify build
 
 # 3. search (auto-syncs first)
 indexify search "calcTotal"
+indexify search "calcTotal" --case-sensitive           # exact case
 indexify search "parse[A-Za-z]+Request" --regex
-indexify search "calcTotal" --json                    # JSON array of { file, line, text }
+indexify search "parseRequest" --regex --case-sensitive
+indexify search "calcTotal" --max 50 --json            # JSON array of { file, line, text }
 
 indexify status                                        # built? file count, roots, last build/sync
 ```
@@ -91,7 +94,7 @@ indexify status                                        # built? file count, root
 | `init [--root PATH[@ENC]]… [--force]` | Configure roots/encodings → `settings.json` |
 | `build [--force]` | (Re)build the index from `settings.json` |
 | `sync` | Incremental catch-up (search does this automatically) |
-| `search <q> [--regex] [--max N] [--json] [--no-sync]` | Search the index |
+| `search <q> [--regex] [--case-sensitive] [--max N] [--json] [--no-sync]` | Search the index |
 | `status [--json]` | Index statistics |
 | `serve` | NDJSON daemon used by the VS Code extension |
 | `mcp` | MCP (Model Context Protocol) stdio server |
@@ -116,16 +119,36 @@ opens the shared index and keeps it fresh via a file watcher for the lifetime of
 
 ## 🧩 VS Code extension
 
-1. Configure roots once — run `indexify init …` (or edit `.indexify/settings.json`), then accept the
-   **"Build it now?"** prompt (or run **indexify: Build / rebuild index**). If no `settings.json` exists,
-   the first build indexes the whole workspace as UTF-8.
-2. Hit **`Ctrl+Alt+F`** to search; use **Search (regex)** for patterns.
+Two search UIs share the same index and update it automatically in the background.
 
-| Command | Keybinding |
-| --- | --- |
-| **indexify: Search (substring)** | `Ctrl+Alt+F` |
-| **indexify: Search (regex)** | — |
-| **indexify: Build / rebuild index** | — |
+### Sidebar view
+
+Click the **indexify icon** in the Activity Bar, or press **`Ctrl+Alt+Shift+F`** to focus it.
+
+- **Streaming results** grouped by file. Each file header shows the filename prominently on its own
+  line with the directory path below. Hover the header to see the full path as a tooltip.
+- **Match highlighting** in every result row. Click a row to open the file at that line.
+- **`Aa`** — case-sensitive toggle (default: case-insensitive).
+- **`.*`** — regular expression toggle (needs a ≥3-character literal run in the pattern).
+- **Max results** dropdown — 50 / 100 / 300 / 1000 / ∞. Changes take effect on the next search.
+- **`···`** — reveals two path-filter fields:
+  - **Files to include** — only show results from matching paths (e.g. `src/`, `*.java`, `delivery/**/*.java`).
+  - **Files to exclude** — hide results from matching paths (e.g. `*.min.js`, `test/`).
+  - Both accept glob patterns (`*` = within a segment, `**` = across segments, `?` = single char);
+    plain text without wildcards is treated as a substring of the path.
+  - Filters are applied client-side: no re-search is triggered when you change them.
+
+### QuickPick
+
+Press **`Ctrl+Alt+F`** for a lightweight one-shot search. Results stream into a filterable dropdown;
+press Enter to open the selected file.
+
+| Command | Keybinding | Description |
+| --- | --- | --- |
+| **indexify: Search (substring)** | `Ctrl+Alt+F` | QuickPick — substring search |
+| **indexify: Search (regex)** | — | QuickPick — regex search |
+| **indexify: Focus Search View** | `Ctrl+Alt+Shift+F` | Focus the sidebar search panel |
+| **indexify: Build / rebuild index** | — | Full (re)build |
 
 VS Code settings cover only the editor side — `indexify.indexDir`, `indexify.binaryPath`,
 `indexify.maxResults`. **Roots and encodings are not VS Code settings**; they live in
@@ -157,7 +180,7 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
      ├─ build:   parallel walk → per-file decode (UTF-8/Shift_JIS/EUC-JP) → DISTINCT trigrams → index
      ├─ sync:    compare mtimes → reindex only changed files, drop deleted ones
      ├─ watch:   notify FS events → incremental update (delete+add, debounced)
-     └─ search:  trigram-AND candidates → parallel verify (substring/regex) → file:line
+     └─ search:  trigram-AND candidates → parallel verify (substring/regex, case-sensitive option)
 ```
 
 ## 📊 Measured (≈290k files: ~260k UTF-8 + ~29k Shift_JIS)
@@ -176,6 +199,9 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
   The VS Code extension's CI downloads the matching one and bundles it under `bin/<os>-<arch>/` at
   package time; for local development, `cargo build` and point `indexify.binaryPath` (or `$PATH`) at it.
 - **regex** uses the index only when the pattern contains a literal run of ≥3 characters (e.g. `func\s+\w+`).
+- **Case-sensitive** mode: the trigram phase always over-approximates with lowercase trigrams, then the
+  verify step re-checks original bytes for exact case — so case-sensitive searches are safe but slightly
+  slower on large candidate sets.
 - If antivirus scans the index directory, builds can occasionally hit a transient I/O error; indexify
   retries automatically. Excluding the index folder from AV avoids it entirely.
 

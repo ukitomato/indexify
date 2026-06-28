@@ -2,7 +2,7 @@
   "name": "indexify",
   "displayName": "indexify",
   "description": "Fast indexed full-text code search. A Rust (Tantivy) binary keeps a compact trigram index, decoding UTF-8, Shift_JIS and EUC-JP per folder, and updates incrementally as files change. Substring & regex, native, no Docker. Shines on large or multi-encoding codebases (e.g. a monorepo of many repos). One index is shared with the indexify CLI and MCP server.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "ukitomato",
   "license": "MIT",
   "engines": { "vscode": "^1.75.0" },
@@ -15,11 +15,23 @@
     "commands": [
       { "command": "indexify.search", "title": "Search (substring)", "category": "indexify" },
       { "command": "indexify.searchRegex", "title": "Search (regex)", "category": "indexify" },
-      { "command": "indexify.reindex", "title": "Build / rebuild index", "category": "indexify" }
+      { "command": "indexify.reindex", "title": "Build / rebuild index", "category": "indexify" },
+      { "command": "indexify.focusSearch", "title": "Focus Search View", "category": "indexify" }
     ],
     "keybindings": [
-      { "command": "indexify.search", "key": "ctrl+alt+f" }
+      { "command": "indexify.search", "key": "ctrl+alt+f" },
+      { "command": "indexify.focusSearch", "key": "ctrl+alt+shift+f" }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "indexify", "title": "indexify", "icon": "images/icon.svg" }
+      ]
+    },
+    "views": {
+      "indexify": [
+        { "id": "indexify.searchView", "type": "webview", "name": "Search" }
+      ]
+    },
     "configuration": {
       "title": "indexify",
       "properties": {

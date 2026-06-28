@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { cfg } from './config';
+import { openMatch } from './openMatch';
 import type { Match, Sidecar } from './sidecarClient';
 
 interface ResultItem extends vscode.QuickPickItem {
@@ -18,18 +19,6 @@ function toItem(m: Match): ResultItem {
     _file: m.file,
     _line: m.line,
   };
-}
-
-async function openResult(item: ResultItem): Promise<void> {
-  try {
-    const doc = await vscode.workspace.openTextDocument(item._file);
-    const ed = await vscode.window.showTextDocument(doc);
-    const pos = new vscode.Position(Math.max(0, (item._line || 1) - 1), 0);
-    ed.selection = new vscode.Selection(pos, pos);
-    ed.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
-  } catch (e: any) {
-    vscode.window.showErrorMessage(`Could not open: ${item._file} (${e?.message ?? e})`);
-  }
 }
 
 export async function doSearch(sidecar: Sidecar, regex: boolean): Promise<void> {
@@ -68,7 +57,7 @@ export async function doSearch(sidecar: Sidecar, regex: boolean): Promise<void> 
     const pick = qp.selectedItems[0];
     qp.hide();
     if (pick) {
-      void openResult(pick);
+      void openMatch(pick._file, pick._line);
     }
   });
   qp.onDidHide(() => {
@@ -81,7 +70,7 @@ export async function doSearch(sidecar: Sidecar, regex: boolean): Promise<void> 
   qp.show();
 
   try {
-    const { hits } = await sidecar.search(query, regex, max, (m) => {
+    const { hits } = await sidecar.search(query, regex, max, false, (m) => {
       if (!cancelled && items.length < max) {
         items.push(toItem(m));
         scheduleFlush();

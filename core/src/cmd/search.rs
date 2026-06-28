@@ -19,6 +19,7 @@ pub fn run(
     max: usize,
     json: bool,
     no_sync: bool,
+    case_sensitive: bool,
 ) -> Result<()> {
     let dir = store::resolve_index_dir(index_dir);
 
@@ -44,7 +45,7 @@ pub fn run(
         auto_sync(&dir, &state);
     }
 
-    let hits = searcher::search(&state, query, regex, max)?;
+    let hits = searcher::search(&state, query, regex, max, case_sensitive)?;
 
     if json {
         let arr: Vec<_> = hits

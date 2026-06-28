@@ -9,6 +9,5 @@ esbuild.js
 .vscode/**
 .gitignore
 .vscode-test/**
-images/*.svg
 **/.eslintrc*
 *.vsix

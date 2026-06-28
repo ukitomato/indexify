@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { doSearch } from './search';
 import { indexDir, resolveBinary, setExtensionPath } from './config';
 import { Sidecar } from './sidecarClient';
+import { SearchViewProvider } from './searchView';
 
 let sidecar: Sidecar | undefined;
 
@@ -60,10 +61,19 @@ export function activate(context: vscode.ExtensionContext): void {
       });
   }
 
+  const searchView = new SearchViewProvider(context.extensionUri, () => sidecar);
+
   context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(SearchViewProvider.viewType, searchView, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
     vscode.commands.registerCommand('indexify.search', () => sidecar && doSearch(sidecar, false)),
     vscode.commands.registerCommand('indexify.searchRegex', () => sidecar && doSearch(sidecar, true)),
     vscode.commands.registerCommand('indexify.reindex', () => reindex()),
+    vscode.commands.registerCommand('indexify.focusSearch', async () => {
+      await vscode.commands.executeCommand('indexify.searchView.focus');
+      searchView.focus();
+    }),
     { dispose: () => sidecar?.dispose() }
   );
 }

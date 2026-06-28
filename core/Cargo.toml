@@ -1,6 +1,6 @@
 [package]
 name = "indexify"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Incremental trigram code-search index — CLI, MCP server, and VSCode sidecar (Tantivy)"
 repository = "https://github.com/ukitomato/indexify"

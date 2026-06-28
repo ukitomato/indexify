@@ -112,12 +112,12 @@ export class Sidecar {
     this.proc.stdin.write(JSON.stringify(obj) + '\n');
   }
 
-  async search(query: string, regex: boolean, max: number, onMatch: MatchCb): Promise<{ hits: number }> {
+  async search(query: string, regex: boolean, max: number, caseSensitive: boolean, onMatch: MatchCb): Promise<{ hits: number }> {
     await this.ready;
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
       this.pending.set(id, { onMatch, resolve, reject });
-      this.send({ id, cmd: 'search', query, regex, max });
+      this.send({ id, cmd: 'search', query, regex, max, caseSensitive });
     });
   }
 
