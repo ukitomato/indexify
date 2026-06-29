@@ -30,7 +30,10 @@ pub fn run(index_dir: Option<&str>, root_args: &[String], force: bool) -> Result
     } else {
         // Non-interactive with no flags: index everything under the workspace as UTF-8.
         eprintln!("no --root given and not a terminal; defaulting to the whole workspace (utf-8).");
-        vec![RootCfg { path: ".".into(), encoding: "utf-8".into() }]
+        vec![RootCfg {
+            path: ".".into(),
+            encoding: "utf-8".into(),
+        }]
     };
 
     let cfg = Config { roots };
@@ -68,7 +71,10 @@ fn prompt_roots() -> Result<Vec<RootCfg>> {
         roots.push(store::parse_root_arg(arg));
     }
     if roots.is_empty() {
-        roots.push(RootCfg { path: ".".into(), encoding: "utf-8".into() });
+        roots.push(RootCfg {
+            path: ".".into(),
+            encoding: "utf-8".into(),
+        });
     }
     Ok(roots)
 }

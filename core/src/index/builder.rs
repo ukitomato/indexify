@@ -26,16 +26,30 @@ fn is_binary(bytes: &[u8]) -> bool {
     bytes.iter().take(8192).any(|&b| b == 0)
 }
 
-fn distinct_trigrams(lc: &str) -> Vec<String> {
+/// Distinct char n-grams (length 2 and 3) of the lowercased text — the candidate-filter terms
+/// stored per document. Bigrams enable 2-char queries (notably 2-char CJK words like 契約);
+/// trigrams stay the more selective term for >=3-char queries. Both lengths live in the same
+/// field — a 2-char and a 3-char term never collide — and the field is `IndexRecordOption::Basic`
+/// (no positions/freqs), so adding bigrams costs only modest extra index size.
+fn distinct_ngrams(lc: &str) -> Vec<String> {
     let chars: Vec<char> = lc.chars().collect();
     let mut set = HashSet::new();
+    for w in chars.windows(2) {
+        set.insert(w.iter().collect::<String>());
+    }
     for w in chars.windows(3) {
         set.insert(w.iter().collect::<String>());
     }
     set.into_iter().collect()
 }
 
-fn make_doc(fields: &Fields, path: &str, enc_name: &str, mtime: u64, tris: Vec<String>) -> TantivyDocument {
+fn make_doc(
+    fields: &Fields,
+    path: &str,
+    enc_name: &str,
+    mtime: u64,
+    tris: Vec<String>,
+) -> TantivyDocument {
     let mut d = TantivyDocument::new();
     d.add_text(fields.path, path);
     d.add_text(fields.enc, enc_name);
@@ -43,9 +57,19 @@ fn make_doc(fields: &Fields, path: &str, enc_name: &str, mtime: u64, tris: Vec<S
     let tokens: Vec<Token> = tris
         .into_iter()
         .enumerate()
-        .map(|(i, t)| Token { position: i, text: t, ..Default::default() })
+        .map(|(i, t)| Token {
+            position: i,
+            text: t,
+            ..Default::default()
+        })
         .collect();
-    d.add_pre_tokenized_text(fields.tri, PreTokenizedString { text: String::new(), tokens });
+    d.add_pre_tokenized_text(
+        fields.tri,
+        PreTokenizedString {
+            text: String::new(),
+            tokens,
+        },
+    );
     d
 }
 
@@ -57,7 +81,7 @@ fn file_mtime_ms(meta: &std::fs::Metadata) -> u64 {
         .unwrap_or(0)
 }
 
-/// Read+decode a file and return (mtime_ms, distinct trigrams). None if skipped (too big / binary).
+/// Read+decode a file and return (mtime_ms, distinct n-grams). None if skipped (too big / binary).
 fn file_meta(path: &Path, enc: &'static encoding_rs::Encoding) -> Option<(u64, Vec<String>)> {
     let meta = std::fs::metadata(path).ok()?;
     if meta.len() > MAX_FILE_BYTES {
@@ -69,11 +93,16 @@ fn file_meta(path: &Path, enc: &'static encoding_rs::Encoding) -> Option<(u64, V
         return None;
     }
     let (text, _, _) = enc.decode(&bytes);
-    Some((mt, distinct_trigrams(&text.to_ascii_lowercase())))
+    Some((mt, distinct_ngrams(&text.to_ascii_lowercase())))
 }
 
 /// Full (re)build over a single root. Parallel walk produces trigrams; one consumer adds docs.
-pub fn build_root<F: Fn(u64) + Sync>(state: &State, root: &str, enc_name: &str, progress: F) -> Result<u64> {
+pub fn build_root<F: Fn(u64) + Sync>(
+    state: &State,
+    root: &str,
+    enc_name: &str,
+    progress: F,
+) -> Result<u64> {
     let enc = crate::encoding::enc_by_name(enc_name);
     let fields = state.fields;
     let enc_owned = enc_name.to_string();
@@ -89,21 +118,24 @@ pub fn build_root<F: Fn(u64) + Sync>(state: &State, root: &str, enc_name: &str, 
                 w.delete_term(Term::from_field_text(fields.path, &path));
                 w.add_document(make_doc(&fields, &path, &enc_owned, mt, tris))?;
                 n += 1;
-                if n % 20000 == 0 {
+                if n.is_multiple_of(20000) {
                     progress(n);
                 }
             }
             Ok(n)
         });
 
-        let walker = ignore::WalkBuilder::new(root).standard_filters(true).build_parallel();
+        let walker = ignore::WalkBuilder::new(root)
+            .standard_filters(true)
+            .build_parallel();
         walker.run(|| {
             let tx = tx.clone();
             Box::new(move |result| {
                 if let Ok(entry) = result {
-                    if entry.file_type().map_or(false, |t| t.is_file()) {
+                    if entry.file_type().is_some_and(|t| t.is_file()) {
                         if let Some((mt, tris)) = file_meta(entry.path(), enc) {
-                            let _ = tx.send((entry.path().to_string_lossy().into_owned(), mt, tris));
+                            let _ =
+                                tx.send((entry.path().to_string_lossy().into_owned(), mt, tris));
                         }
                     }
                 }
@@ -132,11 +164,18 @@ fn load_index_mtimes(state: &State) -> Result<HashMap<String, u64>> {
                 }
             }
             let d: TantivyDocument = searcher.doc(DocAddress::new(ord as u32, doc_id))?;
-            let path = d.get_first(state.fields.path).and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let path = d
+                .get_first(state.fields.path)
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             if path.is_empty() {
                 continue;
             }
-            let mt = d.get_first(state.fields.mtime).and_then(|v| v.as_u64()).unwrap_or(0);
+            let mt = d
+                .get_first(state.fields.mtime)
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
             map.insert(path, mt);
         }
     }
@@ -185,7 +224,7 @@ pub fn sync_all<F: Fn(u64) + Sync>(state: &State, progress: F) -> Result<SyncSta
                         w.add_document(make_doc(&fields, &p, &enc_name, mt, tris))?;
                         seen.insert(p);
                         updated += 1;
-                        if updated % 5000 == 0 {
+                        if updated.is_multiple_of(5000) {
                             progress(updated);
                         }
                     }
@@ -202,16 +241,17 @@ pub fn sync_all<F: Fn(u64) + Sync>(state: &State, progress: F) -> Result<SyncSta
         });
 
         for (rp, enc) in &roots_snapshot {
-            let enc: &'static encoding_rs::Encoding = *enc;
             let enc_name = enc_name_of(enc).to_string();
-            let walker = ignore::WalkBuilder::new(rp).standard_filters(true).build_parallel();
+            let walker = ignore::WalkBuilder::new(rp)
+                .standard_filters(true)
+                .build_parallel();
             walker.run(|| {
                 let tx = tx.clone();
                 let indexed = indexed.clone();
                 let enc_name = enc_name.clone();
                 Box::new(move |result| {
                     if let Ok(entry) = result {
-                        if entry.file_type().map_or(false, |t| t.is_file()) {
+                        if entry.file_type().is_some_and(|t| t.is_file()) {
                             let path = entry.path();
                             let pathstr = path.to_string_lossy().into_owned();
                             if let Ok(meta) = std::fs::metadata(path) {
@@ -225,7 +265,12 @@ pub fn sync_all<F: Fn(u64) + Sync>(state: &State, progress: F) -> Result<SyncSta
                                         }
                                         _ => match file_meta(path, enc) {
                                             Some((mt2, tris)) => {
-                                                let _ = tx.send(SyncMsg::Doc(pathstr, enc_name.clone(), mt2, tris));
+                                                let _ = tx.send(SyncMsg::Doc(
+                                                    pathstr,
+                                                    enc_name.clone(),
+                                                    mt2,
+                                                    tris,
+                                                ));
                                             }
                                             None => {
                                                 let _ = tx.send(SyncMsg::Seen(pathstr));
@@ -241,12 +286,17 @@ pub fn sync_all<F: Fn(u64) + Sync>(state: &State, progress: F) -> Result<SyncSta
             });
         }
         drop(tx);
-        consumer.join().map_err(|_| anyhow!("sync consumer panicked"))?
+        consumer
+            .join()
+            .map_err(|_| anyhow!("sync consumer panicked"))?
     })?;
 
     state.writer.lock().unwrap().commit()?;
     state.reader.reload()?;
-    Ok(SyncStats { updated: res.0, removed: res.1 })
+    Ok(SyncStats {
+        updated: res.0,
+        removed: res.1,
+    })
 }
 
 /// Incrementally update a single changed path (add/modify => reindex, missing => delete).
@@ -267,7 +317,13 @@ pub fn update_path(state: &State, path: &Path) {
     w.delete_term(Term::from_field_text(state.fields.path, &path_str));
     if path.is_file() {
         if let Some((mt, tris)) = file_meta(path, enc) {
-            let _ = w.add_document(make_doc(&state.fields, &path_str, enc_name_of(enc), mt, tris));
+            let _ = w.add_document(make_doc(
+                &state.fields,
+                &path_str,
+                enc_name_of(enc),
+                mt,
+                tris,
+            ));
         }
     }
 }
@@ -276,7 +332,127 @@ pub fn update_path(state: &State, path: &Path) {
 /// transient io errors (e.g. antivirus touching the index files) and retry a build.
 pub fn recreate_writer(state: &State) -> Result<()> {
     std::thread::sleep(Duration::from_millis(600)); // let AV finish touching the index files
-    let w = state.index.writer_with_num_threads::<TantivyDocument>(1, WRITER_HEAP_BYTES)?;
+    let w = state
+        .index
+        .writer_with_num_threads::<TantivyDocument>(1, WRITER_HEAP_BYTES)?;
     *state.writer.lock().unwrap() = w;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- distinct_ngrams ---
+
+    #[test]
+    fn distinct_ngrams_basic() {
+        // "abcd" → bigrams ab,bc,cd + trigrams abc,bcd
+        let mut v = distinct_ngrams("abcd");
+        v.sort();
+        assert_eq!(v, vec!["ab", "abc", "bc", "bcd", "cd"]);
+    }
+
+    #[test]
+    fn distinct_ngrams_deduplicates() {
+        // "aaa" → bigram "aa" + trigram "aaa"
+        let mut v = distinct_ngrams("aaa");
+        v.sort();
+        assert_eq!(v, vec!["aa", "aaa"]);
+    }
+
+    #[test]
+    fn distinct_ngrams_two_chars_yields_bigram() {
+        // a 2-char input now produces exactly its bigram — this is what makes 2-char search work
+        assert_eq!(distinct_ngrams("ab"), vec!["ab"]);
+    }
+
+    #[test]
+    fn distinct_ngrams_empty_string() {
+        assert!(distinct_ngrams("").is_empty());
+    }
+
+    #[test]
+    fn distinct_ngrams_single_char() {
+        assert!(distinct_ngrams("a").is_empty());
+    }
+
+    #[test]
+    fn distinct_ngrams_exactly_three_chars() {
+        // "abc" → bigrams ab,bc + trigram abc
+        let mut v = distinct_ngrams("abc");
+        v.sort();
+        assert_eq!(v, vec!["ab", "abc", "bc"]);
+    }
+
+    #[test]
+    fn distinct_ngrams_japanese() {
+        // "検索テスト" → 5 chars → 4 bigrams + 3 trigrams = 7
+        assert_eq!(distinct_ngrams("検索テスト").len(), 7);
+    }
+
+    #[test]
+    fn distinct_ngrams_two_char_japanese_word() {
+        // a 2-char CJK word like 契約 yields its bigram, so it becomes searchable
+        assert_eq!(distinct_ngrams("契約"), vec!["契約"]);
+    }
+
+    #[test]
+    fn distinct_ngrams_mixed_ascii_japanese() {
+        // "ab検索テ" → 5 chars → 4 bigrams + 3 trigrams = 7, char-based windows
+        let v = distinct_ngrams("ab検索テ");
+        assert_eq!(v.len(), 7);
+        let set: std::collections::HashSet<_> = v.into_iter().collect();
+        assert!(set.contains("ab"));
+        assert!(set.contains("ab検"));
+    }
+
+    // --- is_binary ---
+
+    #[test]
+    fn is_binary_plain_text() {
+        assert!(!is_binary(b"hello world\nthis is text\n"));
+    }
+
+    #[test]
+    fn is_binary_with_null_byte() {
+        let mut data = b"hello world".to_vec();
+        data.push(0);
+        assert!(is_binary(&data));
+    }
+
+    #[test]
+    fn is_binary_empty() {
+        assert!(!is_binary(b""));
+    }
+
+    #[test]
+    fn is_binary_null_at_8192_boundary() {
+        // null at exactly index 8192 → outside the scan window → not binary
+        let mut data = vec![b'a'; 8193];
+        data[8192] = 0;
+        assert!(!is_binary(&data));
+
+        // null at index 8191 → inside → binary
+        let mut data2 = vec![b'a'; 8193];
+        data2[8191] = 0;
+        assert!(is_binary(&data2));
+    }
+
+    #[test]
+    fn is_binary_null_at_first_byte() {
+        let data = [0u8, b'a', b'b'];
+        assert!(is_binary(&data));
+    }
+
+    // --- file_mtime_ms ---
+
+    #[test]
+    fn file_mtime_ms_real_file() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        let meta = std::fs::metadata(tmp.path()).unwrap();
+        let ms = file_mtime_ms(&meta);
+        // any modern filesystem gives a non-zero mtime
+        assert!(ms > 0);
+    }
 }

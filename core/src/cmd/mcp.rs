@@ -32,7 +32,10 @@ const DEFAULT_MAX_RESULTS: usize = 100;
 const BUILD_MAX_ATTEMPTS: u32 = 6;
 
 pub fn run(index_dir: Option<&str>) -> Result<()> {
-    let mut server = McpServer { dir: store::resolve_index_dir(index_dir), state: None };
+    let mut server = McpServer {
+        dir: store::resolve_index_dir(index_dir),
+        state: None,
+    };
     let stdin = std::io::stdin();
     let mut out = std::io::stdout();
     for line in stdin.lock().lines() {
@@ -43,7 +46,10 @@ pub fn run(index_dir: Option<&str>) -> Result<()> {
         let msg: Value = match serde_json::from_str(&line) {
             Ok(v) => v,
             Err(_) => {
-                write_msg(&mut out, &json!({"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}));
+                write_msg(
+                    &mut out,
+                    &json!({"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}),
+                );
                 continue;
             }
         };
@@ -104,7 +110,9 @@ impl McpServer {
         let id = id.unwrap_or(Value::Null);
         Some(match result {
             Ok(r) => json!({"jsonrpc":"2.0","id":id,"result":r}),
-            Err((code, message)) => json!({"jsonrpc":"2.0","id":id,"error":{"code":code,"message":message}}),
+            Err((code, message)) => {
+                json!({"jsonrpc":"2.0","id":id,"error":{"code":code,"message":message}})
+            }
         })
     }
 
@@ -125,11 +133,11 @@ impl McpServer {
         json!({ "tools": [
             {
                 "name": "search_code",
-                "description": "Full-text substring search across the indexed code (UTF-8 and Shift_JIS folders). Returns matching path:line: text. Needs a >=3 character query.",
+                "description": "Full-text substring search across the indexed code (UTF-8 and Shift_JIS folders). Returns matching path:line: text. Needs a >=2 character query (a 2-char query, e.g. a Japanese word like 契約, is supported).",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "query": { "type": "string", "description": "Substring to search for (case-insensitive, >=3 chars)." },
+                        "query": { "type": "string", "description": "Substring to search for (case-insensitive, >=2 chars)." },
                         "max_results": { "type": "integer", "description": "Max results (default 100)." }
                     },
                     "required": ["query"]
@@ -137,11 +145,11 @@ impl McpServer {
             },
             {
                 "name": "search_regex",
-                "description": "Regular-expression search across the indexed code. The pattern must contain a literal run of >=3 chars so the trigram index can pre-filter candidates.",
+                "description": "Regular-expression search across the indexed code. The pattern must contain a literal run of >=2 chars (ASCII or CJK) so the index can pre-filter candidates.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "pattern": { "type": "string", "description": "Regex pattern (case-insensitive). Must contain a >=3 char literal run." },
+                        "pattern": { "type": "string", "description": "Regex pattern (case-insensitive). Must contain a >=2 char literal run." },
                         "max_results": { "type": "integer", "description": "Max results (default 100)." }
                     },
                     "required": ["pattern"]
@@ -202,13 +210,20 @@ impl McpServer {
         if query.is_empty() {
             return text_result(format!("missing `{key}`"), true);
         }
-        let max = args.get("max_results").and_then(|v| v.as_u64()).map(|n| n as usize).unwrap_or(DEFAULT_MAX_RESULTS);
+        let max = args
+            .get("max_results")
+            .and_then(|v| v.as_u64())
+            .map(|n| n as usize)
+            .unwrap_or(DEFAULT_MAX_RESULTS);
         let state = match self.state() {
             Ok(s) => s,
             Err(e) => return text_result(format!("error opening index: {e}"), true),
         };
         match searcher::search(&state, query, regex, max, false) {
-            Ok(hits) => text_result(self.format_hits(&hits), false),
+            Ok(outcome) => text_result(
+                self.format_hits(&outcome.hits, outcome.candidates_truncated),
+                false,
+            ),
             Err(e) => text_result(format!("search error: {e}"), true),
         }
     }
@@ -249,7 +264,10 @@ impl McpServer {
     fn tool_sync(&mut self) -> Value {
         if !store::index_built(&self.dir) {
             return text_result(
-                format!("index_not_found: no index at {}. Run build_index first.", self.dir.display()),
+                format!(
+                    "index_not_found: no index at {}. Run build_index first.",
+                    self.dir.display()
+                ),
                 true,
             );
         }
@@ -274,7 +292,13 @@ impl McpServer {
             Ok(stats) => {
                 let secs = t0.elapsed().as_secs_f64();
                 self.update_meta(&state, false);
-                text_result(format!("synced: {} updated, {} removed in {secs:.1}s", stats.updated, stats.removed), false)
+                text_result(
+                    format!(
+                        "synced: {} updated, {} removed in {secs:.1}s",
+                        stats.updated, stats.removed
+                    ),
+                    false,
+                )
             }
             Err(e) => text_result(format!("sync error: {e}"), true),
         }
@@ -286,7 +310,9 @@ impl McpServer {
         let meta = store::load_meta(&self.dir);
         let size = store::index_size_bytes(&self.dir);
         let file_count = if built {
-            self.state().map(|s| s.num_docs()).unwrap_or(meta.file_count)
+            self.state()
+                .map(|s| s.num_docs())
+                .unwrap_or(meta.file_count)
         } else {
             meta.file_count
         };
@@ -304,7 +330,10 @@ impl McpServer {
             "last_sync": meta.last_sync,
             "roots": roots,
         });
-        text_result(serde_json::to_string_pretty(&status).unwrap_or_else(|_| status.to_string()), false)
+        text_result(
+            serde_json::to_string_pretty(&status).unwrap_or_else(|_| status.to_string()),
+            false,
+        )
     }
 
     fn update_meta(&self, state: &State, built: bool) {
@@ -319,7 +348,7 @@ impl McpServer {
         let _ = store::save_meta(&self.dir, &meta);
     }
 
-    fn format_hits(&self, hits: &[Hit]) -> String {
+    fn format_hits(&self, hits: &[Hit], truncated: bool) -> String {
         if hits.is_empty() {
             return "No matches.".to_string();
         }
@@ -333,6 +362,11 @@ impl McpServer {
             s.push_str(&format!("{}:{}: {}\n", p, h.line, h.text));
         }
         s.push_str(&format!("\n{} results", hits.len()));
+        if truncated {
+            s.push_str(
+                "\n(note: candidate limit reached — results may be incomplete; narrow the query for full coverage)",
+            );
+        }
         s
     }
 }

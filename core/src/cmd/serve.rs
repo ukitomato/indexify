@@ -87,14 +87,18 @@ fn handle_cmd(state: &Arc<State>, dir: &Path, req: &serde_json::Value) -> Result
                 let mut attempt = 0;
                 loop {
                     attempt += 1;
-                    let prog = |n: u64| emit(serde_json::json!({ "id": id2, "type": "progress", "indexed": n }));
+                    let prog = |n: u64| {
+                        emit(serde_json::json!({ "id": id2, "type": "progress", "indexed": n }))
+                    };
                     match builder::build_root(state, &root_str, enc, prog) {
                         Ok(n) => {
                             total += n;
                             break;
                         }
                         Err(e) if attempt < MAX_ATTEMPTS => {
-                            emit(serde_json::json!({ "id": id, "type": "progress", "message": format!("retrying build (attempt {attempt}) after error: {e}") }));
+                            emit(
+                                serde_json::json!({ "id": id, "type": "progress", "message": format!("retrying build (attempt {attempt}) after error: {e}") }),
+                            );
                             let _ = builder::recreate_writer(state);
                         }
                         Err(e) => return Err(e),
@@ -112,18 +116,21 @@ fn handle_cmd(state: &Arc<State>, dir: &Path, req: &serde_json::Value) -> Result
             state.set_roots(&roots);
             let t0 = Instant::now();
             let id2 = id.clone();
-            let prog = |n: u64| emit(serde_json::json!({ "id": id2, "type": "progress", "indexed": n }));
-            let mut result = builder::sync_all(state, &prog);
+            let prog =
+                |n: u64| emit(serde_json::json!({ "id": id2, "type": "progress", "indexed": n }));
+            let mut result = builder::sync_all(state, prog);
             let mut attempt = 1;
             while result.is_err() && attempt < MAX_ATTEMPTS {
                 attempt += 1;
                 let _ = builder::recreate_writer(state);
-                result = builder::sync_all(state, &prog);
+                result = builder::sync_all(state, prog);
             }
             let stats = result?;
             let ms = t0.elapsed().as_millis() as u64;
             update_meta(dir, state, false);
-            emit(serde_json::json!({ "id": id, "type": "synced", "updated": stats.updated, "removed": stats.removed, "ms": ms }));
+            emit(
+                serde_json::json!({ "id": id, "type": "synced", "updated": stats.updated, "removed": stats.removed, "ms": ms }),
+            );
             let _ = start_watcher(state.clone());
             Ok(false)
         }
@@ -131,13 +138,18 @@ fn handle_cmd(state: &Arc<State>, dir: &Path, req: &serde_json::Value) -> Result
             let q = req.get("query").and_then(|v| v.as_str()).unwrap_or("");
             let regex = req.get("regex").and_then(|v| v.as_bool()).unwrap_or(false);
             let max = req.get("max").and_then(|v| v.as_u64()).unwrap_or(300) as usize;
-            let case_sensitive = req.get("caseSensitive").and_then(|v| v.as_bool()).unwrap_or(false);
-            let hits = searcher::search(state, q, regex, max, case_sensitive)?;
-            let n = hits.len();
-            for h in hits {
-                emit(serde_json::json!({ "id": id, "type": "match", "file": h.file, "line": h.line, "text": h.text }));
+            let case_sensitive = req
+                .get("caseSensitive")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let outcome = searcher::search(state, q, regex, max, case_sensitive)?;
+            let n = outcome.hits.len();
+            for h in outcome.hits {
+                emit(
+                    serde_json::json!({ "id": id, "type": "match", "file": h.file, "line": h.line, "text": h.text }),
+                );
             }
-            emit(serde_json::json!({ "id": id, "type": "done", "hits": n }));
+            emit(serde_json::json!({ "id": id, "type": "done", "hits": n, "truncated": outcome.candidates_truncated }));
             Ok(false)
         }
         Some("watch") => {
@@ -153,7 +165,9 @@ fn handle_cmd(state: &Arc<State>, dir: &Path, req: &serde_json::Value) -> Result
             Ok(true)
         }
         other => {
-            emit(serde_json::json!({ "id": id, "type": "error", "message": format!("unknown cmd: {other:?}") }));
+            emit(
+                serde_json::json!({ "id": id, "type": "error", "message": format!("unknown cmd: {other:?}") }),
+            );
             Ok(false)
         }
     }

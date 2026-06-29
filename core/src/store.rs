@@ -97,7 +97,11 @@ pub fn workspace_root(index_dir: &Path) -> PathBuf {
 /// dir was specified. Falls back to the joined path if the root doesn't exist yet.
 pub fn resolve_root(index_dir: &Path, root: &str) -> PathBuf {
     let p = Path::new(root);
-    let joined = if p.is_absolute() { p.to_path_buf() } else { workspace_root(index_dir).join(p) };
+    let joined = if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        workspace_root(index_dir).join(p)
+    };
     std::fs::canonicalize(&joined).unwrap_or(joined)
 }
 
@@ -163,7 +167,12 @@ pub fn ensure_gitignore(index_dir: &Path) -> Result<()> {
 fn resolve_cfg(index_dir: &Path, cfg: &Config) -> Vec<(PathBuf, String)> {
     cfg.roots
         .iter()
-        .map(|r| (resolve_root(index_dir, &r.path), canonical_name(&r.encoding).to_string()))
+        .map(|r| {
+            (
+                resolve_root(index_dir, &r.path),
+                canonical_name(&r.encoding).to_string(),
+            )
+        })
         .collect()
 }
 
@@ -188,7 +197,12 @@ pub fn resolved_roots_or_default(index_dir: &Path) -> Result<Vec<(PathBuf, Strin
     if !cfg.roots.is_empty() {
         return Ok(resolve_cfg(index_dir, &cfg));
     }
-    let def = Config { roots: vec![RootCfg { path: ".".into(), encoding: "utf-8".into() }] };
+    let def = Config {
+        roots: vec![RootCfg {
+            path: ".".into(),
+            encoding: "utf-8".into(),
+        }],
+    };
     save_config(index_dir, &def)?;
     Ok(resolve_cfg(index_dir, &def))
 }
@@ -215,4 +229,119 @@ fn dir_size(p: &Path) -> u64 {
 
 pub fn now_rfc3339() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- parse_root_arg ---
+
+    #[test]
+    fn parse_root_arg_no_encoding() {
+        let r = parse_root_arg("src/legacy");
+        assert_eq!(r.path, "src/legacy");
+        assert_eq!(r.encoding, "utf-8");
+    }
+
+    #[test]
+    fn parse_root_arg_with_sjis_alias() {
+        let r = parse_root_arg("assets@sjis");
+        assert_eq!(r.path, "assets");
+        assert_eq!(r.encoding, "shift_jis");
+    }
+
+    #[test]
+    fn parse_root_arg_with_canonical_sjis() {
+        let r = parse_root_arg("src@shift_jis");
+        assert_eq!(r.path, "src");
+        assert_eq!(r.encoding, "shift_jis");
+    }
+
+    #[test]
+    fn parse_root_arg_with_euc_jp() {
+        let r = parse_root_arg("legacy@euc-jp");
+        assert_eq!(r.path, "legacy");
+        assert_eq!(r.encoding, "euc-jp");
+    }
+
+    #[test]
+    fn parse_root_arg_at_sign_in_path_uses_last() {
+        // "a@b@sjis" → path "a@b", encoding "shift_jis"
+        let r = parse_root_arg("a@b@sjis");
+        assert_eq!(r.path, "a@b");
+        assert_eq!(r.encoding, "shift_jis");
+    }
+
+    #[test]
+    fn parse_root_arg_empty_enc_suffix_treated_as_no_enc() {
+        // "src@" — empty suffix after @
+        let r = parse_root_arg("src@");
+        assert_eq!(r.path, "src@");
+        assert_eq!(r.encoding, "utf-8");
+    }
+
+    // --- workspace_root ---
+
+    #[test]
+    fn workspace_root_normal_path() {
+        let p = Path::new("/workspace/.indexify");
+        assert_eq!(workspace_root(p), Path::new("/workspace"));
+    }
+
+    #[test]
+    fn workspace_root_relative_path() {
+        let p = Path::new(".indexify");
+        assert_eq!(workspace_root(p), Path::new("."));
+    }
+
+    // --- index_built ---
+
+    #[test]
+    fn index_built_returns_false_when_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(!index_built(tmp.path()));
+    }
+
+    #[test]
+    fn index_built_returns_true_when_tantivy_meta_exists() {
+        let tmp = tempfile::tempdir().unwrap();
+        let tantivy = tmp.path().join("tantivy");
+        std::fs::create_dir_all(&tantivy).unwrap();
+        std::fs::write(tantivy.join("meta.json"), "{}").unwrap();
+        assert!(index_built(tmp.path()));
+    }
+
+    // --- resolved_roots ---
+
+    #[test]
+    fn resolved_roots_errors_when_no_settings() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(resolved_roots(tmp.path()).is_err());
+    }
+
+    #[test]
+    fn resolved_roots_returns_roots_from_settings() {
+        // workspace layout: tmp/ (workspace root)
+        //                       src/       ← the root we want to index
+        //                       .indexify/ ← the index_dir (parent = workspace root)
+        let tmp = tempfile::tempdir().unwrap();
+        let workspace = tmp.path();
+        let index_dir = workspace.join(".indexify");
+        let src = workspace.join("src");
+        std::fs::create_dir_all(&src).unwrap();
+        let cfg = Config {
+            roots: vec![RootCfg {
+                path: "src".into(),
+                encoding: "utf-8".into(),
+            }],
+        };
+        save_config(&index_dir, &cfg).unwrap();
+        let roots = resolved_roots(&index_dir).unwrap();
+        assert_eq!(roots.len(), 1);
+        assert_eq!(roots[0].1, "utf-8");
+        // workspace_root(index_dir) == workspace, so the resolved root should be workspace/src
+        let canonical_workspace = std::fs::canonicalize(workspace).unwrap();
+        assert!(roots[0].0.starts_with(canonical_workspace));
+    }
 }

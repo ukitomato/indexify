@@ -55,13 +55,19 @@
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
-    "package": "npm run build && vsce package --allow-missing-repository"
+    "package": "npm run build && vsce package --allow-missing-repository",
+    "pretest": "tsc -p tsconfig.test.json --noEmit && node esbuild.test.js",
+    "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.0",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.75.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.0",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.24.0",
+    "mocha": "^10.0.0",
     "typescript": "^5.5.0"
   }
 }

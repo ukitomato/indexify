@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0
+
+### CLI / core
+
+- **2-character search.** The index now stores **bigrams as well as trigrams**, so 2-char
+  substring queries work — most useful for 2-char Japanese words (e.g. `契約`, `顧客`) that were
+  previously unsearchable. 1-char queries remain unsupported (nothing to pre-filter on).
+- **Regex pre-filter accepts ≥2-char literal runs, including CJK.** A pattern like `契約.*情報`
+  now uses the index instead of erroring; previously only ASCII literal runs of ≥3 chars counted.
+- **Incomplete-result notice.** When a query's candidate set hits the internal cap (so some
+  matching files were not verified — most likely for a very common short query), the CLI prints a
+  note on stderr and the MCP / sidecar responses flag it, instead of silently returning a partial set.
+
+> **Rebuild required:** the index format changed (bigrams added). Run `indexify build --force`
+> once after upgrading. A plain `sync` only reindexes changed files, so it will *not* backfill
+> bigrams into an existing index.
+
 ## 0.2.0
 
 ### VS Code extension

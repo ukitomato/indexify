@@ -14,7 +14,9 @@ pub fn run(index_dir: Option<&str>, json: bool) -> Result<()> {
 
     // Prefer the live doc count; fall back to the recorded one if the index can't be opened.
     let file_count = if built {
-        open_state(&store::tantivy_dir(&dir)).map(|s| s.num_docs()).unwrap_or(meta.file_count)
+        open_state(&store::tantivy_dir(&dir))
+            .map(|s| s.num_docs())
+            .unwrap_or(meta.file_count)
     } else {
         meta.file_count
     };

@@ -45,7 +45,8 @@ pub fn run(
         auto_sync(&dir, &state);
     }
 
-    let hits = searcher::search(&state, query, regex, max, case_sensitive)?;
+    let outcome = searcher::search(&state, query, regex, max, case_sensitive)?;
+    let hits = &outcome.hits;
 
     if json {
         let arr: Vec<_> = hits
@@ -55,10 +56,15 @@ pub fn run(
         println!("{}", serde_json::to_string_pretty(&arr)?);
     } else {
         let cwd = std::env::current_dir().unwrap_or_default();
-        for h in &hits {
+        for h in hits {
             println!("{}:{}: {}", relativize(&cwd, &h.file), h.line, h.text);
         }
         eprintln!("{} results", hits.len());
+    }
+    if outcome.candidates_truncated {
+        eprintln!(
+            "note: candidate limit reached — results may be incomplete; narrow the query (longer or more specific) for full coverage."
+        );
     }
     Ok(())
 }

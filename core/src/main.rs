@@ -13,17 +13,16 @@
 // $INDEXIFY_INDEX_DIR). Files are decoded with their root's encoding at index time, so UTF-8 and
 // Shift_JIS folders coexist in one index.
 
-mod cmd;
-mod encoding;
-mod index;
-mod store;
-mod watcher;
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use indexify::cmd;
 
 #[derive(Parser)]
-#[command(name = "indexify", version, about = "Incremental trigram code search — CLI, MCP server, and VSCode sidecar")]
+#[command(
+    name = "indexify",
+    version,
+    about = "Incremental trigram code search — CLI, MCP server, and VSCode sidecar"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -102,12 +101,30 @@ enum Command {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Init { index_dir, roots, force } => cmd::init::run(index_dir.as_deref(), &roots, force),
+        Command::Init {
+            index_dir,
+            roots,
+            force,
+        } => cmd::init::run(index_dir.as_deref(), &roots, force),
         Command::Build { index_dir, force } => cmd::build::run(index_dir.as_deref(), force),
         Command::Sync { index_dir } => cmd::sync::run(index_dir.as_deref()),
-        Command::Search { query, index_dir, regex, max, json, no_sync, case_sensitive } => {
-            cmd::search::run(index_dir.as_deref(), &query, regex, max, json, no_sync, case_sensitive)
-        }
+        Command::Search {
+            query,
+            index_dir,
+            regex,
+            max,
+            json,
+            no_sync,
+            case_sensitive,
+        } => cmd::search::run(
+            index_dir.as_deref(),
+            &query,
+            regex,
+            max,
+            json,
+            no_sync,
+            case_sensitive,
+        ),
         Command::Status { index_dir, json } => cmd::status::run(index_dir.as_deref(), json),
         Command::Serve { index_dir } => cmd::serve::run(index_dir.as_deref()),
         Command::Mcp { index_dir } => cmd::mcp::run(index_dir.as_deref()),

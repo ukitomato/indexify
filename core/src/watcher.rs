@@ -28,18 +28,11 @@ pub fn start_watcher(state: Arc<State>) -> Result<()> {
     std::thread::spawn(move || {
         let _watcher = watcher; // keep alive
         let mut pending: HashSet<PathBuf> = HashSet::new();
-        loop {
-            let first = match raw_rx.recv() {
-                Ok(ev) => ev,
-                Err(_) => break,
-            };
+        while let Ok(first) = raw_rx.recv() {
             collect_event(&mut pending, first);
             // drain until quiet
-            loop {
-                match raw_rx.recv_timeout(DEBOUNCE) {
-                    Ok(ev) => collect_event(&mut pending, ev),
-                    Err(_) => break,
-                }
+            while let Ok(ev) = raw_rx.recv_timeout(DEBOUNCE) {
+                collect_event(&mut pending, ev);
             }
             if pending.is_empty() {
                 continue;
@@ -59,7 +52,10 @@ pub fn start_watcher(state: Arc<State>) -> Result<()> {
 fn collect_event(pending: &mut HashSet<PathBuf>, ev: notify::Result<notify::Event>) {
     if let Ok(ev) = ev {
         use notify::EventKind;
-        if matches!(ev.kind, EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)) {
+        if matches!(
+            ev.kind,
+            EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)
+        ) {
             for p in ev.paths {
                 pending.insert(p);
             }

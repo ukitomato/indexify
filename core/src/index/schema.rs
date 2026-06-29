@@ -24,7 +24,18 @@ pub fn build_schema() -> (Schema, Fields) {
     let tri_indexing = TextFieldIndexing::default()
         .set_tokenizer("tri")
         .set_index_option(IndexRecordOption::Basic);
-    let tri = sb.add_text_field("tri", TextOptions::default().set_indexing_options(tri_indexing));
+    let tri = sb.add_text_field(
+        "tri",
+        TextOptions::default().set_indexing_options(tri_indexing),
+    );
     let mtime = sb.add_u64_field("mtime", STORED | FAST);
-    (sb.build(), Fields { path, enc, tri, mtime })
+    (
+        sb.build(),
+        Fields {
+            path,
+            enc,
+            tri,
+            mtime,
+        },
+    )
 }

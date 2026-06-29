@@ -22,12 +22,12 @@ pub fn run(index_dir: Option<&str>) -> Result<()> {
     let progress = |n: u64| eprintln!("  reindexed {n} ({:.1}s)", t0.elapsed().as_secs_f64());
 
     let mut attempt = 1;
-    let mut result = builder::sync_all(&state, &progress);
+    let mut result = builder::sync_all(&state, progress);
     while result.is_err() && attempt < MAX_ATTEMPTS {
         attempt += 1;
         eprintln!("  retrying (attempt {attempt})…");
         let _ = builder::recreate_writer(&state);
-        result = builder::sync_all(&state, &progress);
+        result = builder::sync_all(&state, progress);
     }
     let stats = result?;
     let secs = t0.elapsed().as_secs_f64();
@@ -37,6 +37,9 @@ pub fn run(index_dir: Option<&str>) -> Result<()> {
     meta.file_count = state.num_docs();
     let _ = store::save_meta(&dir, &meta);
 
-    println!("synced: {} updated, {} removed in {secs:.1}s", stats.updated, stats.removed);
+    println!(
+        "synced: {} updated, {} removed in {secs:.1}s",
+        stats.updated, stats.removed
+    );
     Ok(())
 }

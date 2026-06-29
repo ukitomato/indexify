@@ -2,9 +2,9 @@
 
 # indexify
 
-**Fast indexed full-text code search — one trigram index, three front-ends: CLI, MCP server, and VS Code.**
+**Fast indexed full-text code search — one n-gram index, three front-ends: CLI, MCP server, and VS Code.**
 
-A small Rust ([Tantivy](https://github.com/quickwit-oss/tantivy)) binary keeps a compact trigram index,
+A small Rust ([Tantivy](https://github.com/quickwit-oss/tantivy)) binary keeps a compact n-gram index,
 decoding **UTF-8, Shift_JIS, and EUC-JP** per folder, and updates it incrementally as files change.
 
 ![CLI](https://img.shields.io/badge/CLI-indexify-DEA584?logo=rust&logoColor=white)
@@ -26,12 +26,12 @@ It works on any project, and it shines where search usually hurts: **large or mu
 codebases** — for example a monorepo holding many repositories, or a tree mixing modern UTF-8 code with
 legacy Shift_JIS assets.
 
-- ⚡ **Compact trigram index** — a small fraction of your code size, not a copy of it.
+- ⚡ **Compact n-gram index** — a small fraction of your code size, not a copy of it.
 - 🈶 **Per-folder encoding** — each folder is decoded (UTF-8 / Shift_JIS / EUC-JP …) at index time, so a
   single index serves mixed-encoding trees and non-UTF-8 text is searchable without mojibake.
 - 🔁 **Incremental** — search auto-syncs changed files first; the daemon/extension also watch the tree and
   reindex only what changed, so the index stays fresh without re-scanning everything.
-- 🔎 **Substring and regex** — trigram candidates → exact verify (Zoekt/codesearch style).
+- 🔎 **Substring and regex** — n-gram candidates → exact verify (Zoekt/codesearch style); 2-char queries work (incl. 2-char CJK words).
 - 🔡 **Case-sensitive or case-insensitive** — your choice per query.
 - 🧩 **One index, three front-ends** — the **CLI**, an **MCP server** (for AI agents), and the **VS Code**
   extension all read the same index and the same `settings.json`, so they can never disagree about what's
@@ -177,10 +177,10 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
      │  (all read settings.json + the same index)
      ▼
    indexify  (Rust / Tantivy)
-     ├─ build:   parallel walk → per-file decode (UTF-8/Shift_JIS/EUC-JP) → DISTINCT trigrams → index
+     ├─ build:   parallel walk → per-file decode (UTF-8/Shift_JIS/EUC-JP) → DISTINCT bigrams+trigrams → index
      ├─ sync:    compare mtimes → reindex only changed files, drop deleted ones
      ├─ watch:   notify FS events → incremental update (delete+add, debounced)
-     └─ search:  trigram-AND candidates → parallel verify (substring/regex, case-sensitive option)
+     └─ search:  n-gram-AND candidates → parallel verify (substring/regex, case-sensitive option)
 ```
 
 ## 📊 Measured (≈290k files: ~260k UTF-8 + ~29k Shift_JIS)
@@ -198,8 +198,8 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
 - **Binaries** are distributed via GitHub Releases (built by cargo-dist), not committed to the repo.
   The VS Code extension's CI downloads the matching one and bundles it under `bin/<os>-<arch>/` at
   package time; for local development, `cargo build` and point `indexify.binaryPath` (or `$PATH`) at it.
-- **regex** uses the index only when the pattern contains a literal run of ≥3 characters (e.g. `func\s+\w+`).
-- **Case-sensitive** mode: the trigram phase always over-approximates with lowercase trigrams, then the
+- **regex** uses the index only when the pattern contains a literal run of ≥2 characters, ASCII or CJK (e.g. `func\s+\w+`, `契約.*情報`).
+- **Case-sensitive** mode: the n-gram phase always over-approximates with lowercase n-grams, then the
   verify step re-checks original bytes for exact case — so case-sensitive searches are safe but slightly
   slower on large candidate sets.
 - If antivirus scans the index directory, builds can occasionally hit a transient I/O error; indexify

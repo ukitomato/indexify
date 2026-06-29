@@ -28,3 +28,53 @@ pub fn enc_name_of(e: &'static encoding_rs::Encoding) -> &'static str {
 pub fn canonical_name(name: &str) -> &'static str {
     enc_name_of(enc_by_name(name))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enc_by_name_shift_jis_variants() {
+        for alias in &["shift_jis", "SHIFT_JIS", "sjis", "Sjis", "cp932", "CP932"] {
+            assert_eq!(enc_by_name(alias), encoding_rs::SHIFT_JIS, "alias: {alias}");
+        }
+    }
+
+    #[test]
+    fn enc_by_name_euc_jp_variants() {
+        for alias in &["euc-jp", "EUC-JP", "eucjp", "euc_jp", "EUC_JP"] {
+            assert_eq!(enc_by_name(alias), encoding_rs::EUC_JP, "alias: {alias}");
+        }
+    }
+
+    #[test]
+    fn enc_by_name_unknown_falls_back_to_utf8() {
+        for unknown in &["utf-8", "UTF-8", "utf8", "", "latin1", "unknown"] {
+            assert_eq!(enc_by_name(unknown), encoding_rs::UTF_8, "input: {unknown}");
+        }
+    }
+
+    #[test]
+    fn enc_name_of_round_trips() {
+        assert_eq!(enc_name_of(encoding_rs::SHIFT_JIS), "shift_jis");
+        assert_eq!(enc_name_of(encoding_rs::EUC_JP), "euc-jp");
+        assert_eq!(enc_name_of(encoding_rs::UTF_8), "utf-8");
+    }
+
+    #[test]
+    fn enc_by_name_then_enc_name_of_round_trips() {
+        for canonical in &["shift_jis", "euc-jp", "utf-8"] {
+            assert_eq!(enc_name_of(enc_by_name(canonical)), *canonical);
+        }
+    }
+
+    #[test]
+    fn canonical_name_normalizes_aliases() {
+        assert_eq!(canonical_name("sjis"), "shift_jis");
+        assert_eq!(canonical_name("cp932"), "shift_jis");
+        assert_eq!(canonical_name("eucjp"), "euc-jp");
+        assert_eq!(canonical_name("euc_jp"), "euc-jp");
+        assert_eq!(canonical_name("utf-8"), "utf-8");
+        assert_eq!(canonical_name("anything_else"), "utf-8");
+    }
+}
