@@ -14,7 +14,7 @@
   note on stderr and the MCP / sidecar responses flag it, instead of silently returning a partial set.
 
 ::: warning Rebuild required
-The index format changed (bigrams added). Run `indexify build --force` once after upgrading.
+The index format changed (bigrams added). Run `loupe build --force` once after upgrading.
 A plain `sync` only reindexes changed files, so it will **not** backfill bigrams into an existing index.
 :::
 
@@ -24,7 +24,7 @@ A plain `sync` only reindexes changed files, so it will **not** backfill bigrams
 
 ### VS Code extension
 
-- **Sidebar search view** (Activity Bar → indexify icon, `Ctrl+Alt+Shift+F`) — persistent panel with
+- **Sidebar search view** (Activity Bar → loupe icon, `Ctrl+Alt+Shift+F`) — persistent panel with
   streaming results grouped by file, match highlighting, and file-at-line navigation.
   - File group headers show the filename on its own line with the directory path below; hover the
     header to see the full path as a tooltip.
@@ -39,7 +39,7 @@ A plain `sync` only reindexes changed files, so it will **not** backfill bigrams
 
 ### CLI / core
 
-- **`--case-sensitive`** flag for `indexify search` — exact-case substring and regex matching.
+- **`--case-sensitive`** flag for `loupe search` — exact-case substring and regex matching.
   The trigram phase still uses lowercase for fast candidate selection; the verify step re-checks
   original bytes when `--case-sensitive` is set.
 
@@ -63,6 +63,6 @@ Initial release.
 - Per-folder encoding decoded at index time: **UTF-8, Shift_JIS, and EUC-JP** coexist in one index.
 - **Substring and regex** search: trigram candidates → exact verify (parallel).
 - Search **auto-syncs** changed files first; a filesystem watcher keeps the index fresh incrementally.
-- Index stored in `<workspace>/.indexify/` (`settings.json` is committable; the index body is
+- Index stored in `<workspace>/.loupe/` (`settings.json` is committable; the index body is
   git-ignored).
 - Native binaries per platform; no Docker, no runtime dependencies.

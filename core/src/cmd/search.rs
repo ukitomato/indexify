@@ -29,12 +29,12 @@ pub fn run(
                 "{}",
                 serde_json::json!({
                     "error": "index_not_found",
-                    "message": "Run `indexify build` first.",
+                    "message": "Run `loupe build` first.",
                     "index_dir": dir.display().to_string(),
                 })
             );
         } else {
-            eprintln!("no index at {}. Run `indexify build` first.", dir.display());
+            eprintln!("no index at {}. Run `loupe build` first.", dir.display());
         }
         return Ok(());
     }

@@ -6,7 +6,7 @@
    CLI / MCP server / VS Code extension
      │  (all read settings.json + the same index)
      ▼
-   indexify  (Rust / Tantivy)
+   loupe  (Rust / Tantivy)
      ├─ build:   parallel walk → per-file decode → bigrams+trigrams → index
      ├─ sync:    compare mtimes → reindex only changed files, drop deleted
      ├─ watch:   notify FS events → incremental update (debounced)
@@ -19,10 +19,10 @@ All three front-ends — CLI, MCP server, VS Code extension — share the same o
 
 ## Index layout
 
-The index lives at `<workspace>/.indexify/` by default (override with `--index-dir` or `$INDEXIFY_INDEX_DIR`):
+The index lives at `<workspace>/.loupe/` by default (override with `--index-dir` or `$LOUPE_INDEX_DIR`):
 
 ```
-.indexify/
+.loupe/
 ├── settings.json   # committable — roots + encodings
 ├── meta.json       # index metadata (git-ignored)
 └── tantivy/        # Tantivy segment files (git-ignored)
@@ -34,7 +34,7 @@ The index lives at `<workspace>/.indexify/` by default (override with `--index-d
 
 ## Encoding detection
 
-When indexify encounters a folder, it reads the encoding assignment from `settings.json`. It decodes each file's bytes to Unicode at index time using that assignment — so the Tantivy index always stores Unicode text regardless of the source encoding.
+When loupe encounters a folder, it reads the encoding assignment from `settings.json`. It decodes each file's bytes to Unicode at index time using that assignment — so the Tantivy index always stores Unicode text regardless of the source encoding.
 
 Supported encodings:
 
@@ -47,14 +47,14 @@ Supported encodings:
 Assign encodings per root with the `@enc` suffix in `init`:
 
 ```bash
-indexify init --root src --root legacy@shift_jis --root old@euc-jp
+loupe init --root src --root legacy@shift_jis --root old@euc-jp
 ```
 
 ---
 
 ## n-gram indexing (bigrams + trigrams)
 
-For each file, indexify extracts all **bigrams** (2-char sequences) and **trigrams** (3-char sequences) from the decoded Unicode text, deduplicates them, and stores them in Tantivy. This allows any substring query of length ≥ 2 to be answered by looking up n-gram candidates first — without scanning file content at query time.
+For each file, loupe extracts all **bigrams** (2-char sequences) and **trigrams** (3-char sequences) from the decoded Unicode text, deduplicates them, and stores them in Tantivy. This allows any substring query of length ≥ 2 to be answered by looking up n-gram candidates first — without scanning file content at query time.
 
 ::: tip Why bigrams?
 v0.3.0 added bigram support so that 2-character Japanese words (e.g., `契約`, `顧客`) are indexable. Before that, only queries with ≥ 3 characters could use the index for pre-filtering.
@@ -78,7 +78,7 @@ The n-gram phase always indexes and queries **lowercase** n-grams, so it over-ap
 
 ### Incomplete results notice
 
-If the candidate set exceeds the internal cap (most likely for a very short, very common query), indexify prints a notice on stderr (CLI) or flags the response (MCP / sidecar) rather than silently returning a partial result.
+If the candidate set exceeds the internal cap (most likely for a very short, very common query), loupe prints a notice on stderr (CLI) or flags the response (MCP / sidecar) rather than silently returning a partial result.
 
 ---
 

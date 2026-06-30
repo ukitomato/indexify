@@ -1,24 +1,24 @@
 # VS Code Extension
 
-The indexify VS Code extension provides two search UIs that share the same index as the CLI and MCP server. The index is updated automatically in the background via a filesystem watcher.
+The loupe VS Code extension provides two search UIs that share the same index as the CLI and MCP server. The index is updated automatically in the background via a filesystem watcher.
 
 ---
 
 ## Install
 
-The extension is published on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ukitomato.indexify).
+The extension is published on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ukitomato.loupe).
 
-You can also install a `.vsix` directly from the [GitHub Releases page](https://github.com/ukitomato/indexify/releases).
+You can also install a `.vsix` directly from the [GitHub Releases page](https://github.com/ukitomato/loupe/releases).
 
 ::: tip Prerequisite
-You need to run `indexify init` and `indexify build` at least once before using the extension. The extension does not build the index automatically — use the command palette (`indexify: Build / rebuild index`) or the CLI.
+You need to run `loupe init` and `loupe build` at least once before using the extension. The extension does not build the index automatically — use the command palette (`loupe: Build / rebuild index`) or the CLI.
 :::
 
 ---
 
 ## Sidebar view
 
-Click the **indexify icon** in the Activity Bar, or press **`Ctrl+Alt+Shift+F`** to focus the Sidebar search panel.
+Click the **loupe icon** in the Activity Bar, or press **`Ctrl+Alt+Shift+F`** to focus the Sidebar search panel.
 
 ### Results
 
@@ -64,10 +64,10 @@ Press **`Ctrl+Alt+F`** for a lightweight one-shot search. Results stream into a 
 
 | Command | Keybinding | Description |
 |---|---|---|
-| **indexify: Search (substring)** | `Ctrl+Alt+F` | QuickPick — substring search |
-| **indexify: Search (regex)** | — | QuickPick — regex search |
-| **indexify: Focus Search View** | `Ctrl+Alt+Shift+F` | Focus the sidebar search panel |
-| **indexify: Build / rebuild index** | — | Full (re)build of the index |
+| **loupe: Search (substring)** | `Ctrl+Alt+F` | QuickPick — substring search |
+| **loupe: Search (regex)** | — | QuickPick — regex search |
+| **loupe: Focus Search View** | `Ctrl+Alt+Shift+F` | Focus the sidebar search panel |
+| **loupe: Build / rebuild index** | — | Full (re)build of the index |
 
 ---
 
@@ -75,19 +75,19 @@ Press **`Ctrl+Alt+F`** for a lightweight one-shot search. Results stream into a 
 
 | Setting | Default | Description |
 |---|---|---|
-| `indexify.indexDir` | `.indexify` (workspace root) | Path to the index directory. Relative paths resolve from the workspace root. |
-| `indexify.binaryPath` | (auto-detect from PATH) | Path to the `indexify` binary. Set this if the binary is not on `$PATH`. |
-| `indexify.maxResults` | `100` | Default maximum results for the QuickPick search. |
+| `loupe.indexDir` | `.loupe` (workspace root) | Path to the index directory. Relative paths resolve from the workspace root. |
+| `loupe.binaryPath` | (auto-detect from PATH) | Path to the `loupe` binary. Set this if the binary is not on `$PATH`. |
+| `loupe.maxResults` | `100` | Default maximum results for the QuickPick search. |
 
 ::: warning Roots and encodings are not VS Code settings
-Which folders are indexed and their encodings are configured in `settings.json` (via `indexify init` or by hand). This keeps the CLI, MCP server, and extension in agreement. VS Code settings only control the editor-side experience.
+Which folders are indexed and their encodings are configured in `settings.json` (via `loupe init` or by hand). This keeps the CLI, MCP server, and extension in agreement. VS Code settings only control the editor-side experience.
 :::
 
 ---
 
 ## How the extension works
 
-The extension spawns `indexify serve` as a sidecar subprocess. The sidecar:
+The extension spawns `loupe serve` as a sidecar subprocess. The sidecar:
 - Opens the shared on-disk index
 - Starts a filesystem watcher to reindex changed files automatically
 - Accepts NDJSON requests over stdin and streams NDJSON responses to stdout

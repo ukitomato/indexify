@@ -44,13 +44,13 @@ pub fn run(index_dir: Option<&str>, root_args: &[String], force: bool) -> Result
     for r in &cfg.roots {
         println!("  {} ({})", r.path, r.encoding);
     }
-    println!("next: run `indexify build` to create the index.");
+    println!("next: run `loupe build` to create the index.");
     Ok(())
 }
 
 /// Read roots from the terminal: one folder per line, optional @enc suffix, blank line to finish.
 fn prompt_roots() -> Result<Vec<RootCfg>> {
-    println!("Configure indexify — which folders should be indexed?");
+    println!("Configure loupe — which folders should be indexed?");
     println!("  • one folder per line, relative to the workspace root");
     println!("  • append @shift_jis or @euc-jp for non-UTF-8 folders (default is UTF-8)");
     println!("  • press Enter on an empty line to finish (no entries = the whole workspace)");

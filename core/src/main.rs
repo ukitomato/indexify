@@ -1,25 +1,25 @@
-// indexify — incremental trigram code-search index.
+// loupe — incremental trigram code-search index.
 //
 // One binary, several front-ends over the same Tantivy trigram index:
-//   indexify init    [--root <path[@enc]>...] configure which folders to index -> settings.json
-//   indexify build   [--force]                full (re)build from settings.json roots
-//   indexify sync                             incremental catch-up (reuses settings.json roots)
-//   indexify search  <query> [--regex] [--json]   query from the shell
-//   indexify status  [--json]                 index statistics
-//   indexify serve                            NDJSON sidecar for the VSCode extension
-//   indexify mcp                              MCP (Model Context Protocol) stdio server
+//   loupe init    [--root <path[@enc]>...] configure which folders to index -> settings.json
+//   loupe build   [--force]                full (re)build from settings.json roots
+//   loupe sync                             incremental catch-up (reuses settings.json roots)
+//   loupe search  <query> [--regex] [--json]   query from the shell
+//   loupe status  [--json]                 index statistics
+//   loupe serve                            NDJSON sidecar for the VSCode extension
+//   loupe mcp                              MCP (Model Context Protocol) stdio server
 //
-// The index lives in `<workspace>/.indexify/` by default (override with --index-dir or
-// $INDEXIFY_INDEX_DIR). Files are decoded with their root's encoding at index time, so UTF-8 and
+// The index lives in `<workspace>/.loupe/` by default (override with --index-dir or
+// $LOUPE_INDEX_DIR). Files are decoded with their root's encoding at index time, so UTF-8 and
 // Shift_JIS folders coexist in one index.
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use indexify::cmd;
+use loupe::cmd;
 
 #[derive(Parser)]
 #[command(
-    name = "indexify",
+    name = "loupe",
     version,
     about = "Incremental trigram code search — CLI, MCP server, and VSCode sidecar"
 )]
@@ -33,7 +33,7 @@ enum Command {
     /// Configure which folders to index (writes settings.json). With no --root and a terminal,
     /// prompts interactively; otherwise records the given roots (or the whole workspace).
     Init {
-        /// Index directory (default: ./.indexify or $INDEXIFY_INDEX_DIR).
+        /// Index directory (default: ./.loupe or $LOUPE_INDEX_DIR).
         #[arg(long)]
         index_dir: Option<String>,
         /// Folder to index, optionally with an encoding: --root legacy@shift_jis (repeatable).
@@ -45,7 +45,7 @@ enum Command {
     },
     /// Build (or rebuild) the index from the roots in settings.json (configure them with `init`).
     Build {
-        /// Index directory (default: ./.indexify or $INDEXIFY_INDEX_DIR).
+        /// Index directory (default: ./.loupe or $LOUPE_INDEX_DIR).
         #[arg(long)]
         index_dir: Option<String>,
         /// Discard the existing index and rebuild from scratch.

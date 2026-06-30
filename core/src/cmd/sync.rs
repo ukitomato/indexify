@@ -1,5 +1,5 @@
 // sync — incremental catch-up: reindex changed/new files, drop deleted ones. Reuses the roots
-// recorded in settings.json (configure them with `indexify init`).
+// recorded in settings.json (configure them with `loupe init`).
 
 use anyhow::{bail, Result};
 use std::time::Instant;
@@ -12,7 +12,7 @@ const MAX_ATTEMPTS: u32 = 6;
 pub fn run(index_dir: Option<&str>) -> Result<()> {
     let dir = store::resolve_index_dir(index_dir);
     if !store::index_built(&dir) {
-        bail!("no index at {}. Run `indexify build` first.", dir.display());
+        bail!("no index at {}. Run `loupe build` first.", dir.display());
     }
     let roots = store::resolved_roots(&dir)?;
     let tdir = store::tantivy_dir(&dir);

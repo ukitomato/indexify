@@ -3,7 +3,7 @@
 
 mod common;
 use common::{assert_hit, assert_no_hit, to_euc_jp, to_shift_jis, TwoRootWorkspace, Workspace};
-use indexify::{search, sync_all};
+use loupe::{search, sync_all};
 
 // ────────────────────────────────────────────────────────────────
 // Substring: basic case-insensitive / case-sensitive

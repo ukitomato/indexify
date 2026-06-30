@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 
 suite('Extension activation', () => {
   suiteSetup(async () => {
-    const ext = vscode.extensions.getExtension('ukitomato.indexify');
+    const ext = vscode.extensions.getExtension('ukitomato.loupe');
     if (ext && !ext.isActive) {
       await ext.activate();
     }
@@ -17,53 +17,53 @@ suite('Extension activation', () => {
 
   // --- commands ---
 
-  test('indexify.search is registered', async () => {
+  test('loupe.search is registered', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    assert.ok(cmds.includes('indexify.search'), 'indexify.search not found in registered commands');
+    assert.ok(cmds.includes('loupe.search'), 'loupe.search not found in registered commands');
   });
 
-  test('indexify.searchRegex is registered', async () => {
+  test('loupe.searchRegex is registered', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    assert.ok(cmds.includes('indexify.searchRegex'));
+    assert.ok(cmds.includes('loupe.searchRegex'));
   });
 
-  test('indexify.reindex is registered', async () => {
+  test('loupe.reindex is registered', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    assert.ok(cmds.includes('indexify.reindex'));
+    assert.ok(cmds.includes('loupe.reindex'));
   });
 
-  test('indexify.focusSearch is registered', async () => {
+  test('loupe.focusSearch is registered', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    assert.ok(cmds.includes('indexify.focusSearch'));
+    assert.ok(cmds.includes('loupe.focusSearch'));
   });
 
-  test('all four indexify commands are registered', async () => {
+  test('all four loupe commands are registered', async () => {
     const cmds = await vscode.commands.getCommands(true);
-    const indexifyCmds = cmds.filter(c => c.startsWith('indexify.'));
-    for (const expected of ['indexify.search', 'indexify.searchRegex', 'indexify.reindex', 'indexify.focusSearch']) {
-      assert.ok(indexifyCmds.includes(expected), `missing: ${expected}`);
+    const loupeCmds = cmds.filter(c => c.startsWith('loupe.'));
+    for (const expected of ['loupe.search', 'loupe.searchRegex', 'loupe.reindex', 'loupe.focusSearch']) {
+      assert.ok(loupeCmds.includes(expected), `missing: ${expected}`);
     }
   });
 
   // --- default configuration values ---
 
   test('default maxResults is 300', () => {
-    const cfg = vscode.workspace.getConfiguration('indexify');
+    const cfg = vscode.workspace.getConfiguration('loupe');
     assert.strictEqual(cfg.get<number>('maxResults'), 300);
   });
 
   test('default indexDir is empty string', () => {
-    const cfg = vscode.workspace.getConfiguration('indexify');
+    const cfg = vscode.workspace.getConfiguration('loupe');
     assert.strictEqual(cfg.get<string>('indexDir'), '');
   });
 
   test('default binaryPath is empty string', () => {
-    const cfg = vscode.workspace.getConfiguration('indexify');
+    const cfg = vscode.workspace.getConfiguration('loupe');
     assert.strictEqual(cfg.get<string>('binaryPath'), '');
   });
 
   test('configuration section exists and has all three keys', () => {
-    const cfg = vscode.workspace.getConfiguration('indexify');
+    const cfg = vscode.workspace.getConfiguration('loupe');
     assert.ok(cfg.has('maxResults'));
     assert.ok(cfg.has('indexDir'));
     assert.ok(cfg.has('binaryPath'));

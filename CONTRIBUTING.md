@@ -3,13 +3,13 @@
 ## Layout
 
 ```
-indexify/
-├── core/                          ← Rust crate: the `indexify` binary (CLI + MCP + sidecar)
+loupe/
+├── core/                          ← Rust crate: the `loupe` binary (CLI + MCP + sidecar)
 │   ├── Cargo.toml
 │   ├── .cargo/config.toml         ← crt-static (no MinGW runtime DLL on Windows)
 │   └── src/
 │       ├── main.rs                ← clap subcommand routing
-│       ├── store.rs               ← .indexify/ layout: settings.json, meta.json, .gitignore
+│       ├── store.rs               ← .loupe/ layout: settings.json, meta.json, .gitignore
 │       ├── encoding.rs            ← UTF-8 / Shift_JIS / EUC-JP name resolution
 │       ├── watcher.rs             ← notify-based incremental watcher (debounced)
 │       ├── index/
@@ -31,12 +31,12 @@ indexify/
 │       ├── search.ts              ← progressive QuickPick over streamed matches
 │       ├── config.ts             ← settings (indexDir, binaryPath, maxResults), binary resolution
 │       └── sidecarClient.ts       ← NDJSON-over-stdio client (search / build / sync / watch)
-└── bin/<os>-<arch>/indexify       ← compiled binary per platform [shipped + bundled by the vsix]
+└── bin/<os>-<arch>/loupe       ← compiled binary per platform [shipped + bundled by the vsix]
 ```
 
 ## Architecture
 
-- **One binary, several front-ends.** `indexify` is a single Rust executable; subcommands select the
+- **One binary, several front-ends.** `loupe` is a single Rust executable; subcommands select the
   interface (`search`/`build`/… for humans, `mcp` for AI agents, `serve` for VS Code). They all share
   the `index::` core and the same on-disk index.
 - **Single source of truth.** Roots and per-folder encodings live in `<index-dir>/settings.json` (JSON,
@@ -58,12 +58,12 @@ This repo is a Cargo workspace (`Cargo.toml` at the root, the crate in `core/`),
 repo root — the target dir is `./target/`, not `core/target/`.
 
 ```bash
-cargo build --release                          # → target/release/indexify
+cargo build --release                          # → target/release/loupe
 ```
 
 `bin/` is git-ignored (binaries are distributed via Releases, not committed). For local CLI use, put
-`target/release/indexify` on your `$PATH` (e.g. symlink it into `~/.local/bin`). For VS Code dev, set
-`indexify.binaryPath` to it, or copy into `bin/<os>-<arch>/` which `resolveBinary` also checks.
+`target/release/loupe` on your `$PATH` (e.g. symlink it into `~/.local/bin`). For VS Code dev, set
+`loupe.binaryPath` to it, or copy into `bin/<os>-<arch>/` which `resolveBinary` also checks.
 
 ### Releases (cargo-dist)
 
@@ -88,7 +88,7 @@ winget install -e --id Rustlang.Rust.GNU
 winget install -e --id BrechtSanders.WinLibs.POSIX.MSVCRT   # provides gcc/dlltool/ar
 # add both bin dirs to PATH, then from the repo root:
 cargo build --release --target x86_64-pc-windows-gnu
-copy target\x86_64-pc-windows-gnu\release\indexify.exe bin\win32-x64\
+copy target\x86_64-pc-windows-gnu\release\loupe.exe bin\win32-x64\
 ```
 
 `core/.cargo/config.toml` sets `crt-static` for the windows-gnu target so the binary has no MinGW
@@ -110,10 +110,10 @@ npm run package       # vsce package → .vsix
 ## Quick manual check
 
 ```bash
-indexify init --root . && indexify build
-indexify search "<some token in your tree>"
-indexify status
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | indexify mcp   # MCP smoke test
+loupe init --root . && loupe build
+loupe search "<some token in your tree>"
+loupe status
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | loupe mcp   # MCP smoke test
 ```
 
 ## Notes

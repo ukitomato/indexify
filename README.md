@@ -1,13 +1,13 @@
 <div align="center">
 
-# indexify
+# loupe
 
 **Fast indexed full-text code search — one n-gram index, three front-ends: CLI, MCP server, and VS Code.**
 
 A small Rust ([Tantivy](https://github.com/quickwit-oss/tantivy)) binary keeps a compact n-gram index,
 decoding **UTF-8, Shift_JIS, and EUC-JP** per folder, and updates it incrementally as files change.
 
-![CLI](https://img.shields.io/badge/CLI-indexify-DEA584?logo=rust&logoColor=white)
+![CLI](https://img.shields.io/badge/CLI-loupe-DEA584?logo=rust&logoColor=white)
 ![MCP](https://img.shields.io/badge/MCP-stdio%20server-blue)
 ![VS Code](https://img.shields.io/badge/VS%20Code-extension-007ACC?logo=visualstudiocode&logoColor=white)
 ![Engine](https://img.shields.io/badge/engine-Rust%20%2F%20Tantivy-DEA584?logo=rust&logoColor=white)
@@ -18,7 +18,7 @@ decoding **UTF-8, Shift_JIS, and EUC-JP** per folder, and updates it incremental
 ---
 
 Plain recursive grep re-scans the whole tree on every query, editor search crawls on big projects, and
-most code-search tools assume everything is UTF-8. **indexify** trades a one-time index build for
+most code-search tools assume everything is UTF-8. **loupe** trades a one-time index build for
 near-instant searches afterward, and decodes each folder by its own encoding so legacy non-UTF-8 sources
 are searchable too — **Docker-free, no runtime deps**.
 
@@ -36,7 +36,7 @@ legacy Shift_JIS assets.
 - 🧩 **One index, three front-ends** — the **CLI**, an **MCP server** (for AI agents), and the **VS Code**
   extension all read the same index and the same `settings.json`, so they can never disagree about what's
   indexed.
-- 🪶 **Self-contained native binary** — one `indexify` executable per platform, no Docker, no runtime deps.
+- 🪶 **Self-contained native binary** — one `loupe` executable per platform, no Docker, no runtime deps.
 
 ## 🧠 Model
 
@@ -47,8 +47,8 @@ Three steps, separated on purpose:
 2. **`build`** — create the index from `settings.json`.
 3. **`search`** — the everyday operation; it auto-syncs changed files first.
 
-The index lives in `<workspace>/.indexify/` by default (override with `--index-dir` or
-`INDEXIFY_INDEX_DIR`). `settings.json` is safe to commit; the index body (`tantivy/`, `meta.json`) is
+The index lives in `<workspace>/.loupe/` by default (override with `--index-dir` or
+`LOUPE_INDEX_DIR`). `settings.json` is safe to commit; the index body (`tantivy/`, `meta.json`) is
 git-ignored automatically.
 
 ## 📦 Install
@@ -58,35 +58,35 @@ Prebuilt binaries for Linux, macOS, and Windows are published to GitHub Releases
 
 ```bash
 # Linux / macOS
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ukitomato/indexify/releases/latest/download/indexify-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ukitomato/loupe/releases/latest/download/loupe-installer.sh | sh
 ```
 
 ```powershell
 # Windows (PowerShell)
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/ukitomato/indexify/releases/latest/download/indexify-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/ukitomato/loupe/releases/latest/download/loupe-installer.ps1 | iex"
 ```
 
-Or grab a tarball from the [Releases page](https://github.com/ukitomato/indexify/releases), or build
-from source: `cargo install --git https://github.com/ukitomato/indexify indexify`.
+Or grab a tarball from the [Releases page](https://github.com/ukitomato/loupe/releases), or build
+from source: `cargo install --git https://github.com/ukitomato/loupe loupe`.
 
 ## 🚀 CLI
 
 ```bash
 # 1. configure roots (interactive in a terminal, or via flags); add @enc for non-UTF-8 folders
-indexify init --root src --root lib
-indexify init --root src --root legacy@shift_jis      # mixed encodings in one index
+loupe init --root src --root lib
+loupe init --root src --root legacy@shift_jis      # mixed encodings in one index
 
 # 2. build the index from settings.json
-indexify build
+loupe build
 
 # 3. search (auto-syncs first)
-indexify search "calcTotal"
-indexify search "calcTotal" --case-sensitive           # exact case
-indexify search "parse[A-Za-z]+Request" --regex
-indexify search "parseRequest" --regex --case-sensitive
-indexify search "calcTotal" --max 50 --json            # JSON array of { file, line, text }
+loupe search "calcTotal"
+loupe search "calcTotal" --case-sensitive           # exact case
+loupe search "parse[A-Za-z]+Request" --regex
+loupe search "parseRequest" --regex --case-sensitive
+loupe search "calcTotal" --max 50 --json            # JSON array of { file, line, text }
 
-indexify status                                        # built? file count, roots, last build/sync
+loupe status                                        # built? file count, roots, last build/sync
 ```
 
 | Command | Purpose |
@@ -101,14 +101,14 @@ indexify status                                        # built? file count, root
 
 ## 🤖 MCP server (AI agents)
 
-`indexify mcp` speaks the Model Context Protocol over stdio. Register it with your MCP client:
+`loupe mcp` speaks the Model Context Protocol over stdio. Register it with your MCP client:
 
 ```jsonc
 {
   "mcpServers": {
-    "indexify": {
-      "command": "/path/to/indexify",
-      "args": ["mcp", "--index-dir", "/path/to/workspace/.indexify"]
+    "loupe": {
+      "command": "/path/to/loupe",
+      "args": ["mcp", "--index-dir", "/path/to/workspace/.loupe"]
     }
   }
 }
@@ -123,7 +123,7 @@ Two search UIs share the same index and update it automatically in the backgroun
 
 ### Sidebar view
 
-Click the **indexify icon** in the Activity Bar, or press **`Ctrl+Alt+Shift+F`** to focus it.
+Click the **loupe icon** in the Activity Bar, or press **`Ctrl+Alt+Shift+F`** to focus it.
 
 - **Streaming results** grouped by file. Each file header shows the filename prominently on its own
   line with the directory path below. Hover the header to see the full path as a tooltip.
@@ -145,13 +145,13 @@ press Enter to open the selected file.
 
 | Command | Keybinding | Description |
 | --- | --- | --- |
-| **indexify: Search (substring)** | `Ctrl+Alt+F` | QuickPick — substring search |
-| **indexify: Search (regex)** | — | QuickPick — regex search |
-| **indexify: Focus Search View** | `Ctrl+Alt+Shift+F` | Focus the sidebar search panel |
-| **indexify: Build / rebuild index** | — | Full (re)build |
+| **loupe: Search (substring)** | `Ctrl+Alt+F` | QuickPick — substring search |
+| **loupe: Search (regex)** | — | QuickPick — regex search |
+| **loupe: Focus Search View** | `Ctrl+Alt+Shift+F` | Focus the sidebar search panel |
+| **loupe: Build / rebuild index** | — | Full (re)build |
 
-VS Code settings cover only the editor side — `indexify.indexDir`, `indexify.binaryPath`,
-`indexify.maxResults`. **Roots and encodings are not VS Code settings**; they live in
+VS Code settings cover only the editor side — `loupe.indexDir`, `loupe.binaryPath`,
+`loupe.maxResults`. **Roots and encodings are not VS Code settings**; they live in
 `settings.json` so the CLI, MCP server, and extension stay in agreement.
 
 ## ⚙️ Configuration — `settings.json`
@@ -167,7 +167,7 @@ VS Code settings cover only the editor side — `indexify.indexDir`, `indexify.b
 }
 ```
 
-Write it with `indexify init`, or edit it by hand. Relative paths resolve against the workspace root
+Write it with `loupe init`, or edit it by hand. Relative paths resolve against the workspace root
 (the parent of the index dir).
 
 ## 🔧 How it works
@@ -176,7 +176,7 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
    CLI / MCP server / VS Code extension
      │  (all read settings.json + the same index)
      ▼
-   indexify  (Rust / Tantivy)
+   loupe  (Rust / Tantivy)
      ├─ build:   parallel walk → per-file decode (UTF-8/Shift_JIS/EUC-JP) → DISTINCT bigrams+trigrams → index
      ├─ sync:    compare mtimes → reindex only changed files, drop deleted ones
      ├─ watch:   notify FS events → incremental update (delete+add, debounced)
@@ -197,12 +197,12 @@ Write it with `indexify init`, or edit it by hand. Relative paths resolve agains
 
 - **Binaries** are distributed via GitHub Releases (built by cargo-dist), not committed to the repo.
   The VS Code extension's CI downloads the matching one and bundles it under `bin/<os>-<arch>/` at
-  package time; for local development, `cargo build` and point `indexify.binaryPath` (or `$PATH`) at it.
+  package time; for local development, `cargo build` and point `loupe.binaryPath` (or `$PATH`) at it.
 - **regex** uses the index only when the pattern contains a literal run of ≥2 characters, ASCII or CJK (e.g. `func\s+\w+`, `契約.*情報`).
 - **Case-sensitive** mode: the n-gram phase always over-approximates with lowercase n-grams, then the
   verify step re-checks original bytes for exact case — so case-sensitive searches are safe but slightly
   slower on large candidate sets.
-- If antivirus scans the index directory, builds can occasionally hit a transient I/O error; indexify
+- If antivirus scans the index directory, builds can occasionally hit a transient I/O error; loupe
   retries automatically. Excluding the index folder from AV avoids it entirely.
 
 ## 📄 License

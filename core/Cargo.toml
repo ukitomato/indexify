@@ -1,17 +1,17 @@
 [package]
-name = "indexify"
+name = "loupe"
 version = "0.3.0"
 edition = "2021"
 description = "Incremental n-gram code-search index — CLI, MCP server, and VSCode sidecar (Tantivy)"
-repository = "https://github.com/ukitomato/indexify"
+repository = "https://github.com/ukitomato/loupe"
 license = "MIT"
 
 [lib]
-name = "indexify"
+name = "loupe"
 path = "src/lib.rs"
 
 [[bin]]
-name = "indexify"
+name = "loupe"
 path = "src/main.rs"
 
 [dependencies]

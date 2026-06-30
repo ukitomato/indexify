@@ -1,4 +1,4 @@
-// indexify — incremental trigram code-search index (library crate).
+// loupe — incremental trigram code-search index (library crate).
 //
 // The binary (`src/main.rs`) is a thin CLI wrapper over this library: it parses arguments and
 // dispatches to `cmd::*`. The library is split out so the index/build/search logic can be exercised

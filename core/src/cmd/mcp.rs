@@ -135,7 +135,7 @@ impl McpServer {
         json!({
             "protocolVersion": pv,
             "capabilities": { "tools": {} },
-            "serverInfo": { "name": "indexify", "version": env!("CARGO_PKG_VERSION") },
+            "serverInfo": { "name": "loupe", "version": env!("CARGO_PKG_VERSION") },
         })
     }
 
@@ -209,7 +209,7 @@ impl McpServer {
         if !store::index_built(&self.dir) {
             return text_result(
                 format!(
-                    "index_not_found: no index at {}. Run the build_index tool (or `indexify build`) first.",
+                    "index_not_found: no index at {}. Run the build_index tool (or `loupe build`) first.",
                     self.dir.display()
                 ),
                 true,

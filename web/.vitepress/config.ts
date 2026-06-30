@@ -1,12 +1,12 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/indexify/',
-  title: 'indexify',
+  base: '/loupe/',
+  title: 'loupe',
   description: 'Fast indexed full-text code search — one n-gram index, three front-ends: CLI, MCP server, and VS Code.',
 
   head: [
-    ['link', { rel: 'icon', href: '/indexify/favicon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/loupe/favicon.svg', type: 'image/svg+xml' }],
   ],
 
   themeConfig: {
@@ -42,7 +42,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/ukitomato/indexify' },
+      { icon: 'github', link: 'https://github.com/ukitomato/loupe' },
     ],
 
     footer: {

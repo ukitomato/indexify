@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: "indexify"
+  name: "loupe"
   text: "Fast indexed full-text code search"
   tagline: "One n-gram index. Three front-ends: CLI, MCP server, and VS Code. UTF-8, Shift_JIS, and EUC-JP — all in one index."
   actions:
@@ -11,7 +11,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/ukitomato/indexify
+      link: https://github.com/ukitomato/loupe
 
 features:
   - icon: ⚡
@@ -36,12 +36,12 @@ features:
 
   - icon: 🪶
     title: Self-contained native binary
-    details: One indexify executable per platform. No Docker, no runtime dependencies, no daemon required for the CLI. Runs anywhere.
+    details: One loupe executable per platform. No Docker, no runtime dependencies, no daemon required for the CLI. Runs anywhere.
 ---
 
 ## VS Code Extension
 
-Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ukitomato.indexify) — or grab a `.vsix` from [GitHub Releases](https://github.com/ukitomato/indexify/releases).
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ukitomato.loupe) — or grab a `.vsix` from [GitHub Releases](https://github.com/ukitomato/loupe/releases).
 
 The extension ships **two search UIs** that share the same index as the CLI and MCP server, updated automatically in the background.
 
@@ -55,37 +55,37 @@ The extension ships **two search UIs** that share the same index as the CLI and 
 
 ## Install
 
-Prebuilt binaries for Linux, macOS, and Windows are on [GitHub Releases](https://github.com/ukitomato/indexify/releases).
+Prebuilt binaries for Linux, macOS, and Windows are on [GitHub Releases](https://github.com/ukitomato/loupe/releases).
 
 ```bash
 # Linux / macOS
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ukitomato/indexify/releases/latest/download/indexify-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ukitomato/loupe/releases/latest/download/loupe-installer.sh | sh
 ```
 
 ```powershell
 # Windows (PowerShell)
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/ukitomato/indexify/releases/latest/download/indexify-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/ukitomato/loupe/releases/latest/download/loupe-installer.ps1 | iex"
 ```
 
 Or build from source:
 
 ```bash
-cargo install --git https://github.com/ukitomato/indexify indexify
+cargo install --git https://github.com/ukitomato/loupe loupe
 ```
 
 ## Quick start
 
 ```bash
 # 1. Configure roots (add @enc suffix for non-UTF-8 folders)
-indexify init --root src --root legacy@shift_jis
+loupe init --root src --root legacy@shift_jis
 
 # 2. Build the index
-indexify build
+loupe build
 
 # 3. Search — auto-syncs first
-indexify search "calcTotal"
-indexify search "契約" --case-sensitive
-indexify search "parse[A-Za-z]+Request" --regex
+loupe search "calcTotal"
+loupe search "契約" --case-sensitive
+loupe search "parse[A-Za-z]+Request" --regex
 ```
 
 [Full guide →](/guide/getting-started)

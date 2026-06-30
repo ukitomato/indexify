@@ -15,7 +15,7 @@ import { openMatch } from './openMatch';
 import type { Sidecar } from './sidecarClient';
 
 export class SearchViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'indexify.searchView';
+  public static readonly viewType = 'loupe.searchView';
   private view?: vscode.WebviewView;
   private gen = 0;
 
@@ -34,7 +34,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider {
     view.webview.onDidReceiveMessage((msg) => void this.onMessage(msg));
   }
 
-  /** Reveal the view and focus its input (bound to the indexify.focusSearch command). */
+  /** Reveal the view and focus its input (bound to the loupe.focusSearch command). */
   focus(): void {
     this.view?.show?.(true);
     this.view?.webview.postMessage({ type: 'focus' });
@@ -73,7 +73,7 @@ export class SearchViewProvider implements vscode.WebviewViewProvider {
     }
     const sidecar = this.getSidecar();
     if (!sidecar) {
-      post({ type: 'error', message: 'indexify is not running yet' });
+      post({ type: 'error', message: 'loupe is not running yet' });
       return;
     }
     try {

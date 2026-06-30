@@ -18,7 +18,7 @@ impl Env {
     fn new() -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("src");
-        let index_dir = tmp.path().join(".indexify");
+        let index_dir = tmp.path().join(".loupe");
         std::fs::create_dir_all(&root).unwrap();
         Env {
             _tmp: tmp,
@@ -28,8 +28,8 @@ impl Env {
     }
 
     fn cmd(&self) -> Command {
-        let mut c = Command::cargo_bin("indexify").unwrap();
-        c.env("INDEXIFY_INDEX_DIR", &self.index_dir);
+        let mut c = Command::cargo_bin("loupe").unwrap();
+        c.env("LOUPE_INDEX_DIR", &self.index_dir);
         c
     }
 
@@ -206,7 +206,7 @@ fn search_invalid_regex_nonzero_exit() {
     env.write("f.txt", b"hello");
     env.init();
     env.build();
-    // \d{3} has no literal >=2-char run → indexify returns an error
+    // \d{3} has no literal >=2-char run → loupe returns an error
     env.cmd()
         .args(["search", r"\d{3}", "--regex", "--no-sync"])
         .assert()

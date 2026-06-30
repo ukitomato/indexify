@@ -3,14 +3,14 @@
 ## Synopsis
 
 ```
-indexify <COMMAND> [OPTIONS]
+loupe <COMMAND> [OPTIONS]
 ```
 
 Global option available on all commands:
 
 | Flag | Default | Description |
 |---|---|---|
-| `--index-dir <PATH>` | `<workspace>/.indexify` | Override the index directory. Also reads from `$INDEXIFY_INDEX_DIR`. |
+| `--index-dir <PATH>` | `<workspace>/.loupe` | Override the index directory. Also reads from `$LOUPE_INDEX_DIR`. |
 
 ---
 
@@ -19,7 +19,7 @@ Global option available on all commands:
 Configure which folders to index and their encodings. Writes (or updates) `settings.json` inside the index directory.
 
 ```bash
-indexify init [--root PATH[@ENC]]... [--force]
+loupe init [--root PATH[@ENC]]... [--force]
 ```
 
 | Flag | Description |
@@ -39,13 +39,13 @@ indexify init [--root PATH[@ENC]]... [--force]
 
 ```bash
 # Single UTF-8 root
-indexify init --root src
+loupe init --root src
 
 # Mixed encodings
-indexify init --root src --root assets@shift_jis --root legacy@euc-jp
+loupe init --root src --root assets@shift_jis --root legacy@euc-jp
 
 # Overwrite existing settings
-indexify init --root src --force
+loupe init --root src --force
 ```
 
 ::: tip Commit settings.json
@@ -59,7 +59,7 @@ indexify init --root src --force
 Build the index from `settings.json`. This is a one-time full scan; subsequent updates are incremental via `sync` or automatic before `search`.
 
 ```bash
-indexify build [--force]
+loupe build [--force]
 ```
 
 | Flag | Description |
@@ -73,7 +73,7 @@ indexify build [--force]
 Incrementally update the index: reindex changed and new files, drop deleted files. Much faster than a full rebuild.
 
 ```bash
-indexify sync
+loupe sync
 ```
 
 `search` calls this automatically before querying, so you rarely need to run `sync` explicitly.
@@ -85,7 +85,7 @@ indexify sync
 Search the index. Auto-syncs before querying.
 
 ```bash
-indexify search <QUERY> [OPTIONS]
+loupe search <QUERY> [OPTIONS]
 ```
 
 | Argument / Flag | Description |
@@ -100,12 +100,12 @@ indexify search <QUERY> [OPTIONS]
 **Examples:**
 
 ```bash
-indexify search "calcTotal"
-indexify search "calcTotal" --case-sensitive
-indexify search "parse[A-Za-z]+Request" --regex
-indexify search "parseRequest" --regex --case-sensitive
-indexify search "calcTotal" --max 50 --json
-indexify search "契約" --case-sensitive
+loupe search "calcTotal"
+loupe search "calcTotal" --case-sensitive
+loupe search "parse[A-Za-z]+Request" --regex
+loupe search "parseRequest" --regex --case-sensitive
+loupe search "calcTotal" --max 50 --json
+loupe search "契約" --case-sensitive
 ```
 
 ::: warning Incomplete results
@@ -119,7 +119,7 @@ If the n-gram candidate set hits the internal cap, a notice is printed on stderr
 Show index statistics.
 
 ```bash
-indexify status [--json]
+loupe status [--json]
 ```
 
 Output includes:
@@ -139,7 +139,7 @@ Output includes:
 Start the NDJSON daemon used by the VS Code extension. Reads requests from stdin, writes NDJSON responses to stdout. Maintains a filesystem watcher to keep the index fresh automatically.
 
 ```bash
-indexify serve [--index-dir <PATH>]
+loupe serve [--index-dir <PATH>]
 ```
 
 This command is managed by the VS Code extension — you do not normally need to run it manually.
@@ -151,7 +151,7 @@ This command is managed by the VS Code extension — you do not normally need to
 Start the [Model Context Protocol](https://modelcontextprotocol.io/) stdio server for AI agents.
 
 ```bash
-indexify mcp [--index-dir <PATH>]
+loupe mcp [--index-dir <PATH>]
 ```
 
 See [MCP Server](/reference/mcp-server) for configuration and exposed tools.

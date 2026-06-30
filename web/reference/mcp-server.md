@@ -1,6 +1,6 @@
 # MCP Server
 
-`indexify mcp` speaks the [Model Context Protocol](https://modelcontextprotocol.io/) over stdio. It lets any MCP-compatible AI agent (Claude, Cursor, etc.) search your codebase through the same indexed engine used by the CLI and VS Code extension.
+`loupe mcp` speaks the [Model Context Protocol](https://modelcontextprotocol.io/) over stdio. It lets any MCP-compatible AI agent (Claude, Cursor, etc.) search your codebase through the same indexed engine used by the CLI and VS Code extension.
 
 The server opens the shared index, starts a filesystem watcher, and keeps the index fresh for the lifetime of the session.
 
@@ -13,18 +13,18 @@ Add the following to your MCP client's configuration file:
 ```jsonc
 {
   "mcpServers": {
-    "indexify": {
-      "command": "/path/to/indexify",
-      "args": ["mcp", "--index-dir", "/path/to/workspace/.indexify"]
+    "loupe": {
+      "command": "/path/to/loupe",
+      "args": ["mcp", "--index-dir", "/path/to/workspace/.loupe"]
     }
   }
 }
 ```
 
-Replace `/path/to/indexify` with the actual binary location (find it with `which indexify`), and `/path/to/workspace/.indexify` with the index directory for your project.
+Replace `/path/to/loupe` with the actual binary location (find it with `which loupe`), and `/path/to/workspace/.loupe` with the index directory for your project.
 
 ::: tip Default index directory
-If you omit `--index-dir`, the server looks for `.indexify/` relative to the working directory it is launched from. Configure `--index-dir` explicitly if you run the MCP server from a different directory.
+If you omit `--index-dir`, the server looks for `.loupe/` relative to the working directory it is launched from. Configure `--index-dir` explicitly if you run the MCP server from a different directory.
 :::
 
 ### Claude Code example
@@ -33,9 +33,9 @@ If you omit `--index-dir`, the server looks for `.indexify/` relative to the wor
 // .claude/mcp.json  (or ~/.claude/mcp.json for global)
 {
   "mcpServers": {
-    "indexify": {
-      "command": "indexify",
-      "args": ["mcp", "--index-dir", "/path/to/your/project/.indexify"]
+    "loupe": {
+      "command": "loupe",
+      "args": ["mcp", "--index-dir", "/path/to/your/project/.loupe"]
     }
   }
 }

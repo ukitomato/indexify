@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tempfile::TempDir;
 
-use indexify::{build_root, open_state, State};
+use loupe::{build_root, open_state, State};
 
 /// A self-contained workspace (tempdir) with an opened Tantivy State ready for use.
 pub struct Workspace {
@@ -22,7 +22,7 @@ impl Workspace {
     /// (e.g. `"utf-8"`, `"shift_jis"`, `"euc-jp"`).
     pub fn new(encoding: &str) -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let index_dir = tmp.path().join(".indexify");
+        let index_dir = tmp.path().join(".loupe");
         let root = tmp.path().join("src");
         std::fs::create_dir_all(&root).unwrap();
         let tantivy = index_dir.join("tantivy");
@@ -70,7 +70,7 @@ pub fn to_euc_jp(text: &str) -> Vec<u8> {
 }
 
 /// Assert that at least one hit has the given file suffix and 1-based line number.
-pub fn assert_hit(hits: &[indexify::Hit], file_suffix: &str, line: usize) {
+pub fn assert_hit(hits: &[loupe::Hit], file_suffix: &str, line: usize) {
     assert!(
         hits.iter()
             .any(|h| h.file.ends_with(file_suffix) && h.line == line),
@@ -80,7 +80,7 @@ pub fn assert_hit(hits: &[indexify::Hit], file_suffix: &str, line: usize) {
 }
 
 /// Assert that no hit mentions the given file suffix.
-pub fn assert_no_hit(hits: &[indexify::Hit], file_suffix: &str) {
+pub fn assert_no_hit(hits: &[loupe::Hit], file_suffix: &str) {
     assert!(
         !hits.iter().any(|h| h.file.ends_with(file_suffix)),
         "expected NO hits in '{file_suffix}', got: {hits:#?}",
@@ -105,7 +105,7 @@ pub struct TwoRootWorkspace {
 impl TwoRootWorkspace {
     pub fn new() -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let index_dir = tmp.path().join(".indexify");
+        let index_dir = tmp.path().join(".loupe");
         let root_utf8 = tmp.path().join("utf8");
         let root_sjis = tmp.path().join("sjis");
         std::fs::create_dir_all(&root_utf8).unwrap();

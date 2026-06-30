@@ -1,4 +1,4 @@
-// searchView.js — webview UI for the indexify sidebar search.
+// searchView.js — webview UI for the loupe sidebar search.
 (function () {
   const vscode = acquireVsCodeApi();
   const root = document.body.dataset.root || '';

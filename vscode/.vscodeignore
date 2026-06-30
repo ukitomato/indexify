@@ -1,4 +1,4 @@
-# Excluded from the .vsix. The runtime ships out/extension.js + a bin/<os>-<arch>/indexify binary
+# Excluded from the .vsix. The runtime ships out/extension.js + a bin/<os>-<arch>/loupe binary
 # (copied next to the extension at package time; see ../README.md and the package script).
 node_modules/**
 src/**

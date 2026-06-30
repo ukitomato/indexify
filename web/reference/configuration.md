@@ -4,7 +4,7 @@
 
 `settings.json` is the **single source of truth** for what gets indexed. It is read by all three front-ends — CLI, MCP server, and VS Code extension — so they always agree on which folders are indexed and with which encoding.
 
-**Location:** `<index-dir>/settings.json` — default index dir is `<workspace>/.indexify/`.
+**Location:** `<index-dir>/settings.json` — default index dir is `<workspace>/.loupe/`.
 
 ### Schema
 
@@ -36,10 +36,10 @@
 Generate it with `init`:
 
 ```bash
-indexify init --root src --root legacy@shift_jis
+loupe init --root src --root legacy@shift_jis
 ```
 
-Or write it by hand — the format is straightforward. After editing by hand, run `indexify build --force` to rebuild the index from the new configuration.
+Or write it by hand — the format is straightforward. After editing by hand, run `loupe build --force` to rebuild the index from the new configuration.
 
 ### Version control
 
@@ -51,20 +51,20 @@ The index body (`tantivy/`, `meta.json`) is large and regenerable, so `init` add
 
 ## Index directory
 
-By default, the index lives at `<workspace>/.indexify/`. Override with:
+By default, the index lives at `<workspace>/.loupe/`. Override with:
 
 - **CLI flag:** `--index-dir <PATH>` (available on all commands)
-- **Environment variable:** `INDEXIFY_INDEX_DIR=<PATH>`
-- **VS Code setting:** `indexify.indexDir`
+- **Environment variable:** `LOUPE_INDEX_DIR=<PATH>`
+- **VS Code setting:** `loupe.indexDir`
 
-When using a non-default index directory, pass the same path consistently to all front-ends. The easiest way is to set `INDEXIFY_INDEX_DIR` in your shell profile.
+When using a non-default index directory, pass the same path consistently to all front-ends. The easiest way is to set `LOUPE_INDEX_DIR` in your shell profile.
 
 ---
 
-## `.indexify/` layout
+## `.loupe/` layout
 
 ```
-.indexify/
+.loupe/
 ├── settings.json   # Committable — roots + encodings
 ├── meta.json       # Index metadata (git-ignored)
 └── tantivy/        # Tantivy segment files (git-ignored)
@@ -78,9 +78,9 @@ VS Code settings (`settings.json` in `.vscode/` or user settings) control only t
 
 | Setting | Default | Description |
 |---|---|---|
-| `indexify.indexDir` | `.indexify` | Path to the index directory. Relative to workspace root. |
-| `indexify.binaryPath` | (auto) | Explicit path to the `indexify` binary. |
-| `indexify.maxResults` | `100` | Default max results for the QuickPick search. |
+| `loupe.indexDir` | `.loupe` | Path to the index directory. Relative to workspace root. |
+| `loupe.binaryPath` | (auto) | Explicit path to the `loupe` binary. |
+| `loupe.maxResults` | `100` | Default max results for the QuickPick search. |
 
 ---
 
@@ -88,4 +88,4 @@ VS Code settings (`settings.json` in `.vscode/` or user settings) control only t
 
 | Variable | Description |
 |---|---|
-| `INDEXIFY_INDEX_DIR` | Override the index directory for all commands. |
+| `LOUPE_INDEX_DIR` | Override the index directory for all commands. |

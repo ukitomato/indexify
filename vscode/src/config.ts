@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export function cfg(): vscode.WorkspaceConfiguration {
-  return vscode.workspace.getConfiguration('indexify');
+  return vscode.workspace.getConfiguration('loupe');
 }
 
 let extensionPath = '';
@@ -24,25 +24,25 @@ function toAbs(p: string): string {
 }
 
 /**
- * Index directory, shared with the CLI and MCP server. `indexify.indexDir` overrides; otherwise
- * `<workspace>/.indexify`. Keeping all three front-ends on one directory means a single build is
+ * Index directory, shared with the CLI and MCP server. `loupe.indexDir` overrides; otherwise
+ * `<workspace>/.loupe`. Keeping all three front-ends on one directory means a single build is
  * reused everywhere.
  */
 export function indexDir(): string {
   const c = (cfg().get<string>('indexDir') ?? '').trim();
-  return c ? toAbs(c) : path.join(primaryRoot(), '.indexify');
+  return c ? toAbs(c) : path.join(primaryRoot(), '.loupe');
 }
 
-/** Platform subdir + filename of the bundled binary, e.g. linux-x64/indexify. */
+/** Platform subdir + filename of the bundled binary, e.g. linux-x64/loupe. */
 function bundledBinaryRelPath(): string {
-  const exe = process.platform === 'win32' ? 'indexify.exe' : 'indexify';
+  const exe = process.platform === 'win32' ? 'loupe.exe' : 'loupe';
   const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
   const os =
     process.platform === 'win32' ? 'win32' : process.platform === 'darwin' ? 'darwin' : 'linux';
   return path.join('bin', `${os}-${arch}`, exe);
 }
 
-/** Resolve the indexify binary: setting → bundled binary for this platform → 'indexify' on PATH. */
+/** Resolve the loupe binary: setting → bundled binary for this platform → 'loupe' on PATH. */
 export function resolveBinary(): string {
   const c = (cfg().get<string>('binaryPath') ?? '').trim();
   if (c) {
@@ -51,7 +51,7 @@ export function resolveBinary(): string {
   if (extensionPath) {
     const rel = bundledBinaryRelPath();
     // Packaged .vsix copies bin/ next to the extension; in the repo the product-level bin/ is one
-    // level up (tools/indexify/bin), shared with the CLI and MCP server.
+    // level up (tools/loupe/bin), shared with the CLI and MCP server.
     for (const base of [extensionPath, path.join(extensionPath, '..')]) {
       const p = path.join(base, rel);
       if (fs.existsSync(p)) {
@@ -59,5 +59,5 @@ export function resolveBinary(): string {
       }
     }
   }
-  return 'indexify';
+  return 'loupe';
 }

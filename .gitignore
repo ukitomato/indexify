@@ -16,7 +16,7 @@ web/.vitepress/cache/
 bin/
 
 # Index data (if an index is ever built inside this repo)
-.indexify/
+.loupe/
 
 # OS / editor cruft
 .DS_Store

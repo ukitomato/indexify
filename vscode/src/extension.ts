@@ -24,17 +24,17 @@ async function reindex(): Promise<void> {
     return;
   }
   await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: 'indexify: indexing…', cancellable: false },
+    { location: vscode.ProgressLocation.Notification, title: 'loupe: indexing…', cancellable: false },
     async (progress) => {
       try {
         const res = await sidecar!.sync((indexed, message) => {
           progress.report({ message: message ?? `${indexed.toLocaleString()} files…` });
         });
         vscode.window.showInformationMessage(
-          `indexify: index up to date (${res.updated.toLocaleString()} updated, ${res.removed.toLocaleString()} removed, ${(res.ms / 1000).toFixed(1)}s).`
+          `loupe: index up to date (${res.updated.toLocaleString()} updated, ${res.removed.toLocaleString()} removed, ${(res.ms / 1000).toFixed(1)}s).`
         );
       } catch (e: any) {
-        vscode.window.showErrorMessage(`indexify: indexing failed: ${e?.message ?? e}`);
+        vscode.window.showErrorMessage(`loupe: indexing failed: ${e?.message ?? e}`);
       }
     }
   );
@@ -53,7 +53,7 @@ export function activate(context: vscode.ExtensionContext): void {
     void sidecar.sync(() => {/* silent */}).catch(() => {/* ignore */});
   } else {
     vscode.window
-      .showInformationMessage('indexify: no index yet. Build it now?', 'Build', 'Later')
+      .showInformationMessage('loupe: no index yet. Build it now?', 'Build', 'Later')
       .then((sel) => {
         if (sel === 'Build') {
           void reindex();
@@ -67,11 +67,11 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerWebviewViewProvider(SearchViewProvider.viewType, searchView, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
-    vscode.commands.registerCommand('indexify.search', () => sidecar && doSearch(sidecar, false)),
-    vscode.commands.registerCommand('indexify.searchRegex', () => sidecar && doSearch(sidecar, true)),
-    vscode.commands.registerCommand('indexify.reindex', () => reindex()),
-    vscode.commands.registerCommand('indexify.focusSearch', async () => {
-      await vscode.commands.executeCommand('indexify.searchView.focus');
+    vscode.commands.registerCommand('loupe.search', () => sidecar && doSearch(sidecar, false)),
+    vscode.commands.registerCommand('loupe.searchRegex', () => sidecar && doSearch(sidecar, true)),
+    vscode.commands.registerCommand('loupe.reindex', () => reindex()),
+    vscode.commands.registerCommand('loupe.focusSearch', async () => {
+      await vscode.commands.executeCommand('loupe.searchView.focus');
       searchView.focus();
     }),
     { dispose: () => sidecar?.dispose() }

@@ -570,27 +570,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexify"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "chrono",
- "clap",
- "encoding_rs",
- "ignore",
- "memchr",
- "notify",
- "predicates",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "tantivy",
- "tempfile",
-]
-
-[[package]]
 name = "inotify"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -719,6 +698,27 @@ name = "log"
 version = "0.4.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+
+[[package]]
+name = "loupe"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "chrono",
+ "clap",
+ "encoding_rs",
+ "ignore",
+ "memchr",
+ "notify",
+ "predicates",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "tantivy",
+ "tempfile",
+]
 
 [[package]]
 name = "lru"

@@ -1,6 +1,6 @@
 // store.rs — the on-disk layout of an index directory and its config/metadata.
 //
-//   <workspace>/.indexify/
+//   <workspace>/.loupe/
 //   ├── settings.json  roots + per-root encoding — the single source of truth shared by the CLI,
 //   │                  the MCP server, and the VSCode extension (so they can't disagree on what
 //   │                  to index and silently miss files)
@@ -9,7 +9,7 @@
 //   └── tantivy/       the Tantivy index itself
 //
 // Roots in settings.json may be relative; they are resolved against the *workspace root*, i.e. the
-// parent of the index directory. So `.indexify` next to `src/` resolves "src" correctly no matter
+// parent of the index directory. So `.loupe` next to `src/` resolves "src" correctly no matter
 // what the current working directory is (important for the MCP server and the sidecar). JSON is used
 // (not TOML) so the TypeScript extension and the Rust binary can both read/write it without extra
 // dependencies.
@@ -20,8 +20,8 @@ use std::path::{Path, PathBuf};
 
 use crate::encoding::canonical_name;
 
-pub const DEFAULT_DIR_NAME: &str = ".indexify";
-pub const ENV_INDEX_DIR: &str = "INDEXIFY_INDEX_DIR";
+pub const DEFAULT_DIR_NAME: &str = ".loupe";
+pub const ENV_INDEX_DIR: &str = "LOUPE_INDEX_DIR";
 
 /// One indexed folder and the encoding its files are decoded with.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,7 +68,7 @@ pub fn parse_root_arg(arg: &str) -> RootCfg {
     }
 }
 
-/// Resolve the index directory: `--index-dir` flag > `$INDEXIFY_INDEX_DIR` > `./.indexify`.
+/// Resolve the index directory: `--index-dir` flag > `$LOUPE_INDEX_DIR` > `./.loupe`.
 pub fn resolve_index_dir(flag: Option<&str>) -> PathBuf {
     if let Some(f) = flag {
         return PathBuf::from(f);
@@ -91,7 +91,7 @@ pub fn workspace_root(index_dir: &Path) -> PathBuf {
 
 /// Resolve a (possibly relative) root path against the workspace root, canonicalized to an absolute
 /// path. Canonicalizing matters because the stored document keys are derived from this: if one
-/// front-end passes a relative `--index-dir .indexify` (roots resolve under `./`) and another passes
+/// front-end passes a relative `--index-dir .loupe` (roots resolve under `./`) and another passes
 /// an absolute one (roots resolve under `/abs/…`), the *same* file would get two different keys and a
 /// `sync` would re-index everything. Canonicalizing makes the keys identical no matter how the index
 /// dir was specified. Falls back to the joined path if the root doesn't exist yet.
@@ -182,7 +182,7 @@ pub fn resolved_roots(index_dir: &Path) -> Result<Vec<(PathBuf, String)>> {
     let cfg = load_config(index_dir)?;
     if cfg.roots.is_empty() {
         return Err(anyhow!(
-            "no roots configured in {}. Run `indexify init` first.",
+            "no roots configured in {}. Run `loupe init` first.",
             settings_path(index_dir).display()
         ));
     }
@@ -285,13 +285,13 @@ mod tests {
 
     #[test]
     fn workspace_root_normal_path() {
-        let p = Path::new("/workspace/.indexify");
+        let p = Path::new("/workspace/.loupe");
         assert_eq!(workspace_root(p), Path::new("/workspace"));
     }
 
     #[test]
     fn workspace_root_relative_path() {
-        let p = Path::new(".indexify");
+        let p = Path::new(".loupe");
         assert_eq!(workspace_root(p), Path::new("."));
     }
 
@@ -324,10 +324,10 @@ mod tests {
     fn resolved_roots_returns_roots_from_settings() {
         // workspace layout: tmp/ (workspace root)
         //                       src/       ← the root we want to index
-        //                       .indexify/ ← the index_dir (parent = workspace root)
+        //                       .loupe/ ← the index_dir (parent = workspace root)
         let tmp = tempfile::tempdir().unwrap();
         let workspace = tmp.path();
-        let index_dir = workspace.join(".indexify");
+        let index_dir = workspace.join(".loupe");
         let src = workspace.join("src");
         std::fs::create_dir_all(&src).unwrap();
         let cfg = Config {

@@ -2,7 +2,7 @@
 //
 // external:
 //   - vscode : provided by VS Code at runtime (cannot be bundled).
-// The `indexify` native binary is spawned as a child process (NDJSON sidecar) — shipped under bin/,
+// The `loupe` native binary is spawned as a child process (NDJSON sidecar) — shipped under bin/,
 // not via the JS bundle.
 
 const esbuild = require('esbuild');

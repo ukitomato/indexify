@@ -14,25 +14,25 @@ function primaryRoot(): string {
 suite('Config: indexDir', () => {
   teardown(async () => {
     // Always restore the default (empty) after each test
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('indexDir', '', vscode.ConfigurationTarget.Global);
   });
 
-  test('defaults to <workspace>/.indexify when setting is empty', () => {
+  test('defaults to <workspace>/.loupe when setting is empty', () => {
     const dir = indexDir();
-    const expected = path.join(primaryRoot(), '.indexify');
+    const expected = path.join(primaryRoot(), '.loupe');
     assert.strictEqual(dir, expected);
   });
 
   test('uses the setting value when non-empty', async () => {
     const abs = process.platform === 'win32' ? 'C:\\custom\\idx' : '/custom/idx';
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('indexDir', abs, vscode.ConfigurationTarget.Global);
     assert.strictEqual(indexDir(), abs);
   });
 
   test('relative indexDir is resolved against workspace root', async () => {
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('indexDir', '.myindex', vscode.ConfigurationTarget.Global);
     const dir = indexDir();
     assert.ok(path.isAbsolute(dir), 'resolved path must be absolute');
@@ -41,48 +41,48 @@ suite('Config: indexDir', () => {
   });
 
   test('whitespace-only indexDir setting falls back to default', async () => {
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('indexDir', '   ', vscode.ConfigurationTarget.Global);
     const dir = indexDir();
-    const expected = path.join(primaryRoot(), '.indexify');
+    const expected = path.join(primaryRoot(), '.loupe');
     assert.strictEqual(dir, expected);
   });
 });
 
 suite('Config: resolveBinary', () => {
   teardown(async () => {
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('binaryPath', '', vscode.ConfigurationTarget.Global);
     setExtensionPath('');
   });
 
-  test('falls back to "indexify" (PATH lookup) when no setting and no extensionPath', () => {
+  test('falls back to "loupe" (PATH lookup) when no setting and no extensionPath', () => {
     setExtensionPath('');
     const bin = resolveBinary();
-    assert.strictEqual(bin, 'indexify');
+    assert.strictEqual(bin, 'loupe');
   });
 
   test('returns the binaryPath setting when non-empty', async () => {
-    const custom = process.platform === 'win32' ? 'C:\\bin\\indexify.exe' : '/usr/local/bin/indexify';
-    await vscode.workspace.getConfiguration('indexify')
+    const custom = process.platform === 'win32' ? 'C:\\bin\\loupe.exe' : '/usr/local/bin/loupe';
+    await vscode.workspace.getConfiguration('loupe')
       .update('binaryPath', custom, vscode.ConfigurationTarget.Global);
     setExtensionPath('');
     assert.strictEqual(resolveBinary(), custom);
   });
 
   test('binaryPath setting takes priority over extensionPath bundled binary', async () => {
-    const custom = '/custom/indexify';
-    await vscode.workspace.getConfiguration('indexify')
+    const custom = '/custom/loupe';
+    await vscode.workspace.getConfiguration('loupe')
       .update('binaryPath', custom, vscode.ConfigurationTarget.Global);
     setExtensionPath('/some/extension/path');
     assert.strictEqual(resolveBinary(), custom);
   });
 
   test('whitespace-only binaryPath falls back to bundled / PATH', async () => {
-    await vscode.workspace.getConfiguration('indexify')
+    await vscode.workspace.getConfiguration('loupe')
       .update('binaryPath', '   ', vscode.ConfigurationTarget.Global);
     setExtensionPath('');
-    assert.strictEqual(resolveBinary(), 'indexify');
+    assert.strictEqual(resolveBinary(), 'loupe');
   });
 
   test('returns a non-empty string in all cases', () => {

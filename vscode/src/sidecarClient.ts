@@ -1,6 +1,6 @@
-// sidecarClient.ts — manage the indexify daemon (NDJSON over stdio) and correlate requests.
+// sidecarClient.ts — manage the loupe daemon (NDJSON over stdio) and correlate requests.
 //
-// Spawns `indexify serve --index-dir <indexDir>`, keeps it running, and routes responses by request
+// Spawns `loupe serve --index-dir <indexDir>`, keeps it running, and routes responses by request
 // id. search() streams matches via onMatch; build() reports progress via onProgress.
 
 import { spawn, type ChildProcess } from 'child_process';

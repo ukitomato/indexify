@@ -1,6 +1,6 @@
-// realbinary.test.ts — End-to-end tests against the real indexify binary.
+// realbinary.test.ts — End-to-end tests against the real loupe binary.
 // Skipped automatically when the binary is not found; no manual configuration needed.
-// In CI the rust job builds the binary and places it at vscode/bin/<os>-<arch>/indexify.
+// In CI the rust job builds the binary and places it at vscode/bin/<os>-<arch>/loupe.
 
 import * as assert from 'assert';
 import * as os from 'os';
@@ -9,20 +9,20 @@ import * as fs from 'fs';
 import * as cp from 'child_process';
 import { Sidecar } from '../sidecarClient';
 
-const EXE = process.platform === 'win32' ? 'indexify.exe' : 'indexify';
+const EXE = process.platform === 'win32' ? 'loupe.exe' : 'loupe';
 const ARCH = process.arch === 'arm64' ? 'arm64' : 'x64';
 const OS_DIR = process.platform === 'win32' ? 'win32' : process.platform === 'darwin' ? 'darwin' : 'linux';
 const PLATFORM = `${OS_DIR}-${ARCH}`;
 
-/** Locate the indexify binary. Returns undefined if not found. */
+/** Locate the loupe binary. Returns undefined if not found. */
 function findBinary(): string | undefined {
   // Possible locations relative to this compiled test file (out/test/realbinary.test.js):
   //   - CI layout:   out/test/ -> vscode/bin/<platform>/
-  //   - Repo layout: out/test/ -> tools/indexify/bin/<platform>/
+  //   - Repo layout: out/test/ -> tools/loupe/bin/<platform>/
   const base = path.join(__dirname, '..', '..', '..'); // vscode/
   const candidates = [
     path.join(base, 'bin', PLATFORM, EXE),
-    path.join(base, '..', 'bin', PLATFORM, EXE),  // tools/indexify/bin/
+    path.join(base, '..', 'bin', PLATFORM, EXE),  // tools/loupe/bin/
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
@@ -30,7 +30,7 @@ function findBinary(): string | undefined {
 
   // Fallback: try PATH
   try {
-    const r = cp.spawnSync(process.platform === 'win32' ? 'where' : 'which', ['indexify'], { encoding: 'utf8', timeout: 3000 });
+    const r = cp.spawnSync(process.platform === 'win32' ? 'where' : 'which', ['loupe'], { encoding: 'utf8', timeout: 3000 });
     if (r.status === 0 && r.stdout.trim()) {
       return r.stdout.trim().split('\n')[0].trim();
     }
@@ -49,12 +49,12 @@ suite('Real binary e2e', function () {
   suiteSetup(function (this: Mocha.Context) {
     const bin = findBinary();
     if (!bin) {
-      console.log(`[skip] indexify binary not found (looked in vscode/bin/${PLATFORM}/ and PATH)`);
+      console.log(`[skip] loupe binary not found (looked in vscode/bin/${PLATFORM}/ and PATH)`);
       this.skip();
       return;
     }
     binaryPath = bin;
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'indexify-vscode-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'loupe-vscode-test-'));
   });
 
   suiteTeardown(() => {
@@ -66,7 +66,7 @@ suite('Real binary e2e', function () {
   // --- sidecar startup ---
 
   test('sidecar emits {"type":"ready"} on startup', async () => {
-    const idxDir = path.join(tmpDir, 'ready-test', '.indexify');
+    const idxDir = path.join(tmpDir, 'ready-test', '.loupe');
     fs.mkdirSync(idxDir, { recursive: true });
     const s = new Sidecar(binaryPath, idxDir);
     try {
@@ -88,7 +88,7 @@ suite('Real binary e2e', function () {
     fs.mkdirSync(root, { recursive: true });
     fs.writeFileSync(path.join(root, 'hello.txt'), 'helloworld search_target\n');
 
-    const idxDir = path.join(tmpDir, '.indexify');
+    const idxDir = path.join(tmpDir, '.loupe');
 
     // init
     const initR = cp.spawnSync(binaryPath, ['init', '--root', root, '--index-dir', idxDir], { encoding: 'utf8' });
@@ -120,7 +120,7 @@ suite('Real binary e2e', function () {
   });
 
   test('search for a 2-char query returns 0 hits (query too short for index)', async () => {
-    const idxDir = path.join(tmpDir, '.indexify');
+    const idxDir = path.join(tmpDir, '.loupe');
 
     const s = new Sidecar(binaryPath, idxDir);
     try {
@@ -140,7 +140,7 @@ suite('Real binary e2e', function () {
   });
 
   test('sidecar sync after no changes reports 0 updated', async () => {
-    const idxDir = path.join(tmpDir, '.indexify');
+    const idxDir = path.join(tmpDir, '.loupe');
 
     const s = new Sidecar(binaryPath, idxDir);
     try {

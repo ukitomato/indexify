@@ -1,49 +1,49 @@
 {
-  "name": "indexify",
-  "displayName": "indexify",
-  "description": "Fast indexed full-text code search. A Rust (Tantivy) binary keeps a compact trigram index, decoding UTF-8, Shift_JIS and EUC-JP per folder, and updates incrementally as files change. Substring & regex, native, no Docker. Shines on large or multi-encoding codebases (e.g. a monorepo of many repos). One index is shared with the indexify CLI and MCP server.",
-  "version": "0.2.0",
+  "name": "loupe",
+  "displayName": "loupe",
+  "description": "Fast indexed full-text code search. A Rust (Tantivy) binary keeps a compact trigram index, decoding UTF-8, Shift_JIS and EUC-JP per folder, and updates incrementally as files change. Substring & regex, native, no Docker. Shines on large or multi-encoding codebases (e.g. a monorepo of many repos). One index is shared with the loupe CLI and MCP server.",
+  "version": "0.3.0",
   "publisher": "ukitomato",
   "license": "MIT",
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Other"],
   "keywords": ["search", "index", "incremental", "full-text", "regex", "trigram", "encoding", "shift_jis", "monorepo"],
-  "repository": { "type": "git", "url": "https://github.com/ukitomato/indexify.git" },
+  "repository": { "type": "git", "url": "https://github.com/ukitomato/loupe.git" },
   "main": "./out/extension.js",
   "activationEvents": ["onStartupFinished"],
   "contributes": {
     "commands": [
-      { "command": "indexify.search", "title": "Search (substring)", "category": "indexify" },
-      { "command": "indexify.searchRegex", "title": "Search (regex)", "category": "indexify" },
-      { "command": "indexify.reindex", "title": "Build / rebuild index", "category": "indexify" },
-      { "command": "indexify.focusSearch", "title": "Focus Search View", "category": "indexify" }
+      { "command": "loupe.search", "title": "Search (substring)", "category": "loupe" },
+      { "command": "loupe.searchRegex", "title": "Search (regex)", "category": "loupe" },
+      { "command": "loupe.reindex", "title": "Build / rebuild index", "category": "loupe" },
+      { "command": "loupe.focusSearch", "title": "Focus Search View", "category": "loupe" }
     ],
     "keybindings": [
-      { "command": "indexify.search", "key": "ctrl+alt+f" },
-      { "command": "indexify.focusSearch", "key": "ctrl+alt+shift+f" }
+      { "command": "loupe.search", "key": "ctrl+alt+f" },
+      { "command": "loupe.focusSearch", "key": "ctrl+alt+shift+f" }
     ],
     "viewsContainers": {
       "activitybar": [
-        { "id": "indexify", "title": "indexify", "icon": "images/icon.svg" }
+        { "id": "loupe", "title": "loupe", "icon": "images/icon.svg" }
       ]
     },
     "views": {
-      "indexify": [
-        { "id": "indexify.searchView", "type": "webview", "name": "Search" }
+      "loupe": [
+        { "id": "loupe.searchView", "type": "webview", "name": "Search" }
       ]
     },
     "configuration": {
-      "title": "indexify",
+      "title": "loupe",
       "properties": {
-        "indexify.indexDir": {
+        "loupe.indexDir": {
           "type": "string", "default": "",
-          "description": "Index directory, shared with the indexify CLI and MCP server. Empty = <workspace>/.indexify. Which folders are indexed (and their encodings, e.g. shift_jis) is configured in <indexDir>/settings.json — the single source of truth shared by all three front-ends — not in VS Code settings."
+          "description": "Index directory, shared with the loupe CLI and MCP server. Empty = <workspace>/.loupe. Which folders are indexed (and their encodings, e.g. shift_jis) is configured in <indexDir>/settings.json — the single source of truth shared by all three front-ends — not in VS Code settings."
         },
-        "indexify.binaryPath": {
+        "loupe.binaryPath": {
           "type": "string", "default": "",
-          "description": "Path to the indexify executable. Empty = bundled binary for this platform."
+          "description": "Path to the loupe executable. Empty = bundled binary for this platform."
         },
-        "indexify.maxResults": {
+        "loupe.maxResults": {
           "type": "integer", "default": 300,
           "description": "Maximum number of results shown."
         }

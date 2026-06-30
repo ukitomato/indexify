@@ -339,7 +339,7 @@ pub fn update_path(state: &State, path: &Path) {
 /// blocks indefinitely in Tantivy's blocking-lock mode if AV holds the lock file open. To avoid
 /// this hang, we probe the lock file directly (exponential backoff, 30s timeout) and only call
 /// writer_with_num_threads() once the file is accessible. Returns Err if still locked after 30s —
-/// the caller should skip the current root and advise the user to run `indexify sync`.
+/// the caller should skip the current root and advise the user to run `loupe sync`.
 pub fn recreate_writer(state: &State, tantivy_dir: &Path) -> Result<()> {
     {
         let mut guard = state.writer.lock().unwrap();
@@ -368,7 +368,7 @@ pub fn recreate_writer(state: &State, tantivy_dir: &Path) -> Result<()> {
             Err(e) => {
                 return Err(anyhow!(
                     "writer lock unavailable after 30s ({e}); \
-                    exclude .indexify/tantivy from antivirus, then run `indexify sync`"
+                    exclude .loupe/tantivy from antivirus, then run `loupe sync`"
                 ));
             }
         }

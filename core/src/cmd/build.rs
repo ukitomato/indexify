@@ -1,5 +1,5 @@
 // build — full index (re)build from the roots in settings.json. Configure those roots with
-// `indexify init` (interactive or via --root); build itself takes no roots.
+// `loupe init` (interactive or via --root); build itself takes no roots.
 
 use anyhow::{bail, Result};
 use std::path::Path;
@@ -16,7 +16,7 @@ pub fn run(index_dir: Option<&str>, force: bool) -> Result<()> {
     let resolved = match store::resolved_roots(&dir) {
         Ok(r) => r,
         Err(_) => bail!(
-            "no roots configured in {}.\n  run `indexify init` first (interactive), or e.g. `indexify init --root src --root legacy@shift_jis`",
+            "no roots configured in {}.\n  run `loupe init` first (interactive), or e.g. `loupe init --root src --root legacy@shift_jis`",
             store::settings_path(&dir).display()
         ),
     };
@@ -36,7 +36,7 @@ pub fn run(index_dir: Option<&str>, force: bool) -> Result<()> {
         let root_str = abs.to_string_lossy().into_owned();
         eprintln!("indexing {root_str} ({enc})…");
         if writer_dead {
-            eprintln!("  skipped (writer unavailable — run `indexify sync` to catch up)");
+            eprintln!("  skipped (writer unavailable — run `loupe sync` to catch up)");
             continue;
         }
         match build_one(&state, &root_str, enc, &tdir, &t0)? {
@@ -47,7 +47,7 @@ pub fn run(index_dir: Option<&str>, force: bool) -> Result<()> {
         }
     }
     if writer_dead {
-        eprintln!("note: some roots were skipped; run `indexify sync` to index them.");
+        eprintln!("note: some roots were skipped; run `loupe sync` to index them.");
     }
     let secs = t0.elapsed().as_secs_f64();
 
@@ -67,7 +67,7 @@ pub fn run(index_dir: Option<&str>, force: bool) -> Result<()> {
 
 /// Build a single root, retrying with a fresh writer on transient io errors.
 /// Returns Ok(None) if the writer lock is unavailable — caller should skip remaining roots
-/// and advise the user to run `indexify sync`.
+/// and advise the user to run `loupe sync`.
 fn build_one(
     state: &crate::index::State,
     root: &str,

@@ -25,7 +25,7 @@ export async function doSearch(sidecar: Sidecar, regex: boolean): Promise<void> 
   const editor = vscode.window.activeTextEditor;
   const seed = editor && !editor.selection.isEmpty ? editor.document.getText(editor.selection) : '';
   const query = await vscode.window.showInputBox({
-    prompt: regex ? 'indexify (regex)' : 'indexify (substring)',
+    prompt: regex ? 'loupe (regex)' : 'loupe (substring)',
     value: seed,
     placeHolder: regex ? 'e.g. func\\s+\\w+ (needs a >=3-char literal)' : 'e.g. calcTotal',
   });
@@ -88,7 +88,7 @@ export async function doSearch(sidecar: Sidecar, regex: boolean): Promise<void> 
     if (!cancelled) {
       qp.busy = false;
       qp.placeholder = `Error: ${e?.message ?? e}`;
-      vscode.window.showErrorMessage(`indexify failed: ${e?.message ?? e}`);
+      vscode.window.showErrorMessage(`loupe failed: ${e?.message ?? e}`);
     }
   }
 }
