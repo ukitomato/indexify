@@ -24,6 +24,35 @@ pub struct State {
     pub roots: Mutex<Vec<(PathBuf, &'static encoding_rs::Encoding)>>,
 }
 
+/// Open the Tantivy index in read-only mode (no IndexWriter).
+/// Use this when the index is already being written by another process (e.g. `loupe serve`).
+/// Searches work normally; sync/build operations are unavailable.
+pub fn open_state_readonly(tantivy_dir: &Path) -> Result<Arc<State>> {
+    let (schema, fields) = build_schema();
+    std::fs::create_dir_all(tantivy_dir)?;
+    let dir = tantivy::directory::MmapDirectory::open(tantivy_dir)?;
+    let index = Index::open_or_create(dir, schema)?;
+    let analyzer = TextAnalyzer::builder(NgramTokenizer::new(3, 3, false)?).build();
+    index.tokenizers().register("tri", analyzer);
+    let reader = index
+        .reader_builder()
+        .reload_policy(ReloadPolicy::OnCommitWithDelay)
+        .try_into()?;
+    Ok(Arc::new(State {
+        index,
+        writer: Mutex::new(None),
+        reader,
+        fields,
+        roots: Mutex::new(Vec::new()),
+    }))
+}
+
+/// Returns true if the error indicates that the Tantivy IndexWriter lock is held by another
+/// process. Used to decide whether to fall back to read-only mode.
+pub fn is_lock_busy(e: &anyhow::Error) -> bool {
+    e.to_string().contains("LockBusy")
+}
+
 /// Open (or create) the Tantivy index living in `tantivy_dir`.
 pub fn open_state(tantivy_dir: &Path) -> Result<Arc<State>> {
     let (schema, fields) = build_schema();

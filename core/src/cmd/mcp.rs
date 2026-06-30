@@ -23,7 +23,7 @@ use std::sync::{mpsc, Arc};
 use std::time::Instant;
 
 use crate::index::searcher::Hit;
-use crate::index::{builder, open_state, searcher, State};
+use crate::index::{builder, is_lock_busy, open_state, open_state_readonly, searcher, State};
 use crate::store;
 use crate::watcher::start_watcher;
 
@@ -36,6 +36,7 @@ pub fn run(index_dir: Option<&str>) -> Result<()> {
         dir: store::resolve_index_dir(index_dir),
         state: None,
         watcher_stop: None,
+        read_only: false,
     };
     let stdin = std::io::stdin();
     let mut out = std::io::stdout();
@@ -71,18 +72,34 @@ struct McpServer {
     dir: std::path::PathBuf,
     state: Option<Arc<State>>,
     watcher_stop: Option<mpsc::SyncSender<()>>,
+    /// True when the index was opened read-only because another process (e.g. `loupe serve`) holds
+    /// the writer lock. search_code/search_regex work normally; sync/build are unavailable.
+    read_only: bool,
 }
 
 impl McpServer {
     fn state(&mut self) -> Result<Arc<State>> {
         if self.state.is_none() {
-            let s = open_state(&store::tantivy_dir(&self.dir))?;
+            let tantivy_dir = store::tantivy_dir(&self.dir);
+            let (s, ro) = match open_state(&tantivy_dir) {
+                Ok(s) => (s, false),
+                Err(e) if is_lock_busy(&e) => {
+                    eprintln!(
+                        "note: index is locked by another process (e.g. loupe serve); MCP running in read-only mode"
+                    );
+                    (open_state_readonly(&tantivy_dir)?, true)
+                }
+                Err(e) => return Err(e),
+            };
+            self.read_only = ro;
             // Keep the long-lived server fresh without the caller asking: set the configured roots
             // and start the file watcher so edits made during the session are reflected in searches.
-            if let Ok(roots) = store::resolved_roots(&self.dir) {
-                if !roots.is_empty() {
-                    s.set_roots(&roots);
-                    self.replace_watcher(&s);
+            if !ro {
+                if let Ok(roots) = store::resolved_roots(&self.dir) {
+                    if !roots.is_empty() {
+                        s.set_roots(&roots);
+                        self.replace_watcher(&s);
+                    }
                 }
             }
             self.state = Some(s);
@@ -239,6 +256,12 @@ impl McpServer {
     }
 
     fn tool_build(&mut self, args: &Value) -> Value {
+        if self.read_only {
+            return text_result(
+                "index is read-only: another process (e.g. loupe serve) holds the writer lock. Stop it first, then retry build_index.".to_string(),
+                true,
+            );
+        }
         let force = args.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
         let roots = match store::resolved_roots_or_default(&self.dir) {
             Ok(r) => r,
@@ -273,6 +296,12 @@ impl McpServer {
     }
 
     fn tool_sync(&mut self) -> Value {
+        if self.read_only {
+            return text_result(
+                "index is read-only: sync is handled by the running loupe serve daemon.".to_string(),
+                false,
+            );
+        }
         if !store::index_built(&self.dir) {
             return text_result(
                 format!(

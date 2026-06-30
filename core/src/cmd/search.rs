@@ -7,7 +7,7 @@
 use anyhow::Result;
 use std::path::Path;
 
-use crate::index::{builder, open_state, searcher, State};
+use crate::index::{builder, is_lock_busy, open_state, open_state_readonly, searcher, State};
 use crate::store;
 
 const SYNC_MAX_ATTEMPTS: u32 = 6;
@@ -39,9 +39,19 @@ pub fn run(
         return Ok(());
     }
 
-    let state = open_state(&store::tantivy_dir(&dir))?;
+    let tantivy_dir = store::tantivy_dir(&dir);
+    let (state, skip_sync) = match open_state(&tantivy_dir) {
+        Ok(s) => (s, false),
+        Err(e) if is_lock_busy(&e) => {
+            eprintln!(
+                "note: index is locked by another process (e.g. loupe serve); running in read-only mode"
+            );
+            (open_state_readonly(&tantivy_dir)?, true)
+        }
+        Err(e) => return Err(e),
+    };
 
-    if !no_sync {
+    if !no_sync && !skip_sync {
         auto_sync(&dir, &state);
     }
 

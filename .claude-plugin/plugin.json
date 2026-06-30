@@ -1,0 +1,9 @@
+{
+  "name": "loupe",
+  "version": "1.0.0",
+  "description": "Full-text code search skill for Claude Code — substring and regex across UTF-8/Shift_JIS/EUC-JP files. Uses MCP tools when available, falls back to loupe CLI.",
+  "skills": ["skills/loupe"],
+  "requirements": {
+    "minVersion": "2.1.0"
+  }
+}
